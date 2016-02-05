@@ -1,0 +1,17 @@
+body{
+    font-family: Arial;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+h1{
+    margin: 20px;
+    font-size: 54px;
+}
+
+.editor_canvas{
+    border: 4px solid black;
+    border-radius: 10px;
+    background-color: lightgray;
+}
