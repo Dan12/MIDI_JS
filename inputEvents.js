@@ -18,8 +18,10 @@ var Input_Events = new function() {
         this.detail.keyPressed = null;
         this.detail.deltaX = 0;
         this.detail.deltaY = 0;
-        this.detail.mouseIn = false;
+        this.detail.isScrolling = false;
         this.editor = editor;
+        this.prevMouseX = -1;
+        this.prevMouseY = -1;
         
         var thisObj = this;
         // the detail refers to same object
@@ -27,6 +29,7 @@ var Input_Events = new function() {
         $(this.editor).mousedown(function(e){thisObj.mouseInputDown(e)});
         $(this.editor).mouseup(function(e){thisObj.mouseInputUp(e)});
         $(this.editor).mousemove(function(e){thisObj.mouseInputMove(e)});
+        $(this.editor).mouseleave(function(e){thisObj.mouseInputLeave(e)});
         
         this.editor.addEventListener('mousewheel',function(e){e.preventDefault(); thisObj.mouseInputWheel(e)});
         
@@ -42,11 +45,10 @@ var Input_Events = new function() {
     }
     
     InputEvents.prototype.mouseInputLeave = function(event){
-        
-    }
-    
-    InputEvents.prototype.mouseInputEnter = function(event){
-        
+        this.detail.mouseDown = false;
+        this.detail.mouseX = -1;
+        this.detail.mouseY = -1;
+        this.editor.dispatchEvent(this.inputEvent);
     }
     
     InputEvents.prototype.mouseInputDown = function(event){
@@ -60,18 +62,28 @@ var Input_Events = new function() {
         this.detail.mouseX = event.pageX - $(this.editor).offset().left;
         this.detail.mouseY = event.pageY - $(this.editor).offset().top;
         this.detail.mouseDown = false;
+        this.prevMouseX = -1;
+        this.prevMouseY = -1;
         this.editor.dispatchEvent(this.inputEvent);
     }
     
     InputEvents.prototype.mouseInputMove = function(event){
         this.detail.mouseX = event.pageX - $(this.editor).offset().left;
         this.detail.mouseY = event.pageY - $(this.editor).offset().top;
+        if(this.prevMouseX != -1){
+            this.detail.deltaX = this.detail.mouseX-this.prevMouseX;
+            this.detail.deltaY = this.detail.mouseY-this.prevMouseY;
+        }
+        this.prevMouseX = this.detail.mouseX;
+        this.prevMouseY = this.detail.mouseY;
         this.editor.dispatchEvent(this.inputEvent);
     }
     
     InputEvents.prototype.mouseInputWheel = function(event){
         this.detail.deltaX = event.deltaX;
         this.detail.deltaY = event.deltaY;
+        console.log(this.detail.isScrolling);
+        this.detail.isScrolling = true;
         this.editor.dispatchEvent(this.inputEvent);
     }
     

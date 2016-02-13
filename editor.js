@@ -6,8 +6,8 @@ var MIDI_Editor = new function() {
     var widthSub = 60;
     var heightSub = 160;
     // minimum width and height
-    var minHeight = 160;
-    var minWidth = 240;
+    var minHeight = 200;
+    var minWidth = 400;
     var headerHeight = 80;
     
     // init function for namespace

@@ -17,3 +17,7 @@ h1{
     border-radius: 10px;
     background-color: rgb(42,52,51);
 }
+
+.editor_canvas:hover{
+    cursor: default;
+}

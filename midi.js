@@ -13,11 +13,13 @@ var MIDI = new function() {
     var PixelsPerSection = 50;
     var resolutions = [1/32,1/16,1/8,1/4,1/2,1,2,4,8,16,32];
     
-    var scrollVelocity = 15;
+    var scrollVelocity = 24;
+    
+    var scrollBarWidth = 26;
     
     // available keys for editor
     var keys = ["1","2","3","4","5","6","7","8","9","0","-","=",
-                "Q","W","E","R","T","Y","U","I","O","P","[","]",
+                "Q","W","E","R","T6","Y","U","I","O","P","[","]",
                 "A","S","D","F","G","H","J","K","L",";","'","\\n",
                 "Z","X","C","V","B","N","M",",",".","/","\\s"];
                 
@@ -42,6 +44,7 @@ var MIDI = new function() {
         this.edgeScroll = false;
         this.scrollInterval = null;
         this.drawClass = df;
+        this.maxWidth = this.width*3;
         
         var thisObj = this;
         editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
@@ -50,10 +53,21 @@ var MIDI = new function() {
     }
     
     MIDI_Workspace.prototype.generalInput = function(e){
-        this.canvasScroll(e.detail.deltaX, e.detail.deltaY);
+        if(e.detail.isScrolling){
+            this.canvasScroll(e.detail.deltaX, e.detail.deltaY);
+            e.detail.isScrolling = false;
+        }
         if(e.detail.mouseDown){
+            // scrubbing bar
             if(e.detail.mouseY > this.heightOffset && e.detail.mouseY < this.heightOffset+scrubBarHeight)
                 this.scrubBarAt = Math.max(0,(e.detail.mouseX-this.horizontalOffset-keySize)/this.MSToPixels);
+            
+            // scroll bar drag
+            if(e.detail.mouseY > this.height+this.heightOffset-scrollBarWidth && e.detail.mouseX > keySize){
+                this.canvasScroll(e.detail.deltaX*this.maxWidth/this.width,0);
+            }
+            
+            // scrolling edge drag
             this.checkEdgeScroll(e.detail.mouseX, e.detail.mouseY);
         }
         else{
@@ -64,7 +78,7 @@ var MIDI = new function() {
     }
     
     MIDI_Workspace.prototype.checkEdgeScroll = function(mx, my){
-        if(mx < keySize*2 || mx > this.width-keySize || my > this.height+this.heightOffset-keySize || (my > this.heightOffset+scrubBarHeight && my < this.heightOffset+scrubBarHeight+keySize)){
+        if(mx < keySize*2 || mx > this.width-keySize || (my < this.height+this.heightOffset-scrollBarWidth && my > this.height+this.heightOffset-scrollBarWidth-keySize) || (my > this.heightOffset+scrubBarHeight && my < this.heightOffset+scrubBarHeight+keySize)){
             if(!this.edgeScroll){
                 this.edgeScroll = true;
                 var thisObj = this;
@@ -73,31 +87,36 @@ var MIDI = new function() {
                     velocity = [-scrollVelocity,0];
                 else if(mx > this.width-keySize)
                     velocity = [scrollVelocity,0];
-                else if(my > this.height+this.heightOffset-keySize)
+                else if(my < this.height+this.heightOffset-scrollBarWidth && my > this.height+this.heightOffset-scrollBarWidth-keySize)
                     velocity = [0,scrollVelocity];
                 else if(my > this.heightOffset+scrubBarHeight && my < this.heightOffset+scrubBarHeight+keySize)
                     velocity = [0,-scrollVelocity];
                 this.scrollInterval = setInterval(function(){
-                    console.log("Scroll");
                     thisObj.canvasScroll(velocity[0],velocity[1]);
                     thisObj.drawClass.draw();
-                },200);
+                },100);
             }
+        }
+        else{
+           if(this.scrollInterval != null)
+                clearInterval(this.scrollInterval);
+            this.edgeScroll = false; 
         }
     }
     
     MIDI_Workspace.prototype.canvasScroll = function(dx,dy){
-        console.log("scroll in func");
         this.horizontalOffset-=dx;
         this.verticalOffset-=dy;
-        this.verticalOffset = Math.max(this.verticalOffset, -keys.length*keySize+this.height-scrubBarHeight-borderWidth);
+        this.verticalOffset = Math.max(this.verticalOffset, -keys.length*keySize+this.height-scrubBarHeight-borderWidth-scrollBarWidth);
         this.verticalOffset = Math.min(this.verticalOffset, 0);
         this.horizontalOffset = Math.min(this.horizontalOffset, 0);
+        this.horizontalOffset = Math.max(this.horizontalOffset, -this.maxWidth+this.width);
     }
     
     MIDI_Workspace.prototype.windowResize = function(width, height){
         this.width = width;
         this.height = height-this.heightOffset;
+        this.canvasScroll(0,0);
     }
     
     MIDI_Workspace.prototype.draw = function(ctx){
@@ -105,7 +124,7 @@ var MIDI = new function() {
         
         // draw guide lines
         // vertical guide lines
-        var numVertical = Math.ceil(this.width/PixelsPerSection);
+        var numVertical = Math.ceil(this.width/PixelsPerSection)+1;
         ctx.strokeStyle = "rgb(90,70,70)";
         ctx.lineWidth = 1;
         for(var i = 0; i < numVertical; i++){
@@ -168,9 +187,11 @@ var MIDI = new function() {
         ctx.lineTo(scrubBarCenter,this.heightOffset+scrubBarHeight);
         ctx.stroke();
         
-        
         // draw horizontal scroll
-        
+        ctx.fillStyle = "rgb(100,100,100)";
+        ctx.fillRect(keySize,this.height+this.heightOffset-scrollBarWidth,this.width-keySize,scrollBarWidth);
+        ctx.fillStyle = "rgb(200,200,200)";
+        ctx.fillRect(keySize+2+this.width/this.maxWidth*-this.horizontalOffset,this.height+this.heightOffset-scrollBarWidth+2,this.width*this.width/this.maxWidth-keySize-4-borderWidth,scrollBarWidth-4-borderWidth);
         
         // draw border
         ctx.lineWidth = borderWidth;
