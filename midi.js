@@ -44,7 +44,7 @@ var MIDI = new function() {
         this.edgeScroll = false;
         this.scrollInterval = null;
         this.drawClass = df;
-        this.maxWidth = this.width*3;
+        this.maxWidth = this.width*2;
         
         var thisObj = this;
         editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
@@ -198,5 +198,9 @@ var MIDI = new function() {
         ctx.strokeStyle = "rgb(170,170,170)";
         ctx.strokeRect(borderWidth/2,this.heightOffset+borderWidth/2,this.width-borderWidth,this.height-borderWidth);
     
+    }
+    
+    MIDI_Workspace.prototype.isReady = function(){
+        return true;
     }
 }

@@ -82,7 +82,6 @@ var Input_Events = new function() {
     InputEvents.prototype.mouseInputWheel = function(event){
         this.detail.deltaX = event.deltaX;
         this.detail.deltaY = event.deltaY;
-        console.log(this.detail.isScrolling);
         this.detail.isScrolling = true;
         this.editor.dispatchEvent(this.inputEvent);
     }

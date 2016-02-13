@@ -7,7 +7,8 @@ var MIDI_Editor = new function() {
     var heightSub = 160;
     // minimum width and height
     var minHeight = 200;
-    var minWidth = 400;
+    var minWidth = 760;
+    
     var headerHeight = 80;
     
     // init function for namespace
@@ -58,5 +59,12 @@ var MIDI_Editor = new function() {
         this.context.font = "16px arial";
         for (var item in this.items)
             this.items[item].draw(this.context);
+    }
+    
+    Editor.prototype.isReady = function(){
+        for (var item in this.items)
+            if(!this.items[item].isReady())
+                return false;
+        return true;
     }
 }
