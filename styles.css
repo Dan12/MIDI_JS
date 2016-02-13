@@ -3,15 +3,17 @@ body{
     margin: 0;
     padding: 0;
     text-align: center;
+    background-color: rgb(233,232,228);
 }
 
 h1{
     margin: 20px;
     font-size: 54px;
+    color: rgb(99,121,109);
 }
 
 .editor_canvas{
-    border: 4px solid black;
+    border: 4px solid rgb(140,204,188);
     border-radius: 10px;
-    background-color: lightgray;
+    background-color: rgb(42,52,51);
 }
