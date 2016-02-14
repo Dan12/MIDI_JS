@@ -1,5 +1,5 @@
 // Setup namespace
-var Note_Space = new function() {
+var Note_Handler = new function() {
     
     this.init = function(editor, x, y, w, h, p, m){
         return new NoteHandler(editor, x, y, w, h, p, m);
@@ -21,19 +21,13 @@ var Note_Space = new function() {
         this.horizontalOffset = 0;
         this.selected = [];
         this.possibleNewNote = null;
-        this.multiSelect = {};
-        this.multiSelect.isActive = false;
-        this.multiSelect.x = 0;
-        this.multiSelect.y = 0;
-        this.multiSelect.sx = 0;
-        this.multiSelect.sy = 0;
-        this.multiSelect.w = 0;
-        this.multiSelect.h = 0;
+        this.multiSelect = Multi_Select_Space.init();
         this.selectedMouseUp = true;
         this.editor = editor;
         this.resizing = -1;
         this.midiEditor = m;
         this.farthestNote = 0;
+        this.selectedSet = false;
         
         var thisObj = this;
         this.editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
@@ -80,6 +74,7 @@ var Note_Space = new function() {
                             else
                                 this.selected[note].moveNote(e.detail.deltaX, e.detail.deltaY);
                         }
+                        this.selectedSet = false;
                         exit = true;
                     }
                     else{
@@ -90,29 +85,20 @@ var Note_Space = new function() {
                 }
             }
             else{
-                if(e.detail.mouseX-this.horizontalOffset > this.multiSelect.sx){
-                    this.multiSelect.x=this.multiSelect.sx;
-                    this.multiSelect.w=e.detail.mouseX-(this.multiSelect.x+this.horizontalOffset);
-                }
-                else{
-                    this.multiSelect.x=e.detail.mouseX-this.horizontalOffset;
-                    this.multiSelect.w=this.multiSelect.sx-this.multiSelect.x;
-                }
-                if(e.detail.mouseY-this.verticalOffset > this.multiSelect.sy){
-                    this.multiSelect.y=this.multiSelect.sy;
-                    this.multiSelect.h=e.detail.mouseY-(this.multiSelect.y+this.verticalOffset);
-                }
-                else{
-                    this.multiSelect.y=e.detail.mouseY-this.verticalOffset;
-                    this.multiSelect.h=this.multiSelect.sy-this.multiSelect.y;
-                }
-                console.log(this.multiSelect);
+                
+                this.multiSelect.update(e.detail.mouseX, e.detail.mouseY, this.horizontalOffset, this.verticalOffset);
+                
                 // put selected ones into selected
-                for(var note in this.visibleNotes)
-                    if(!this.visibleNotes[note].selected && this.visibleNotes[note].px+this.visibleNotes[note].pw > this.multiSelect.x && this.visibleNotes[note].px < this.multiSelect.x+this.multiSelect.w && this.visibleNotes[note].py+this.visibleNotes[note].height > this.multiSelect.y && this.visibleNotes[note].py < this.multiSelect.y+this.multiSelect.h){
+                for(var note in this.visibleNotes){
+                    if(!this.visibleNotes[note].selected && this.multiSelect.noteInMulti(this.visibleNotes[note])){
                         this.selected.push(this.visibleNotes[note]);
                         this.visibleNotes[note].selected = true;
                     }
+                    if(this.visibleNotes[note].selected && !this.multiSelect.noteInMulti(this.visibleNotes[note])){
+                        this.selected.splice(this.selected.indexOf(this.visibleNotes[note]),1);
+                        this.visibleNotes[note].selected = false;
+                    }
+                }
                 exit = true;
             }
             
@@ -124,19 +110,18 @@ var Note_Space = new function() {
             }
             
             if(!exit && this.selectedMouseUp && e.detail.mouseX > this.x && e.detail.mouseX < this.x+this.width && e.detail.mouseY > this.y && e.detail.mouseY < this.y+this.height)
-                this.possibleNewNote = new Note(Math.floor((e.detail.mouseY-this.y-this.verticalOffset)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
-                //this.possibleNewNote = new Note(Math.floor((e.detail.mouseY-this.y-this.verticalOffset-5)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset-4)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
+                this.possibleNewNote = Note_Space.createNote(Math.floor((e.detail.mouseY-this.y-this.verticalOffset)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
+                //this.possibleNewNote = Note_Space.createNote(Math.floor((e.detail.mouseY-this.y-this.verticalOffset-5)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset-4)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
         }
         else{
             if(this.possibleNewNote != null){
-                this.notes.push(this.possibleNewNote);
+                this.notes.splice(this.findNoteInsert(this.notes, this.possibleNewNote), 0, this.possibleNewNote);
                 this.visibleNotes.push(this.possibleNewNote);
                 if(this.possibleNewNote.px+this.possibleNewNote.pw > this.farthestNote){
                     this.farthestNote = this.possibleNewNote.px+this.possibleNewNote.pw;
-                    this.midiEditor.setMaxWidth(this.farthestNote);
+                    this.midiEditor.setMaxWidth(this.farthestNote*this.resolution);
                 }
                 this.possibleNewNote = null;
-                console.log(this.notes);  
             }
             this.selectedMouseUp = true;
             this.multiSelect.isActive = false;
@@ -173,30 +158,40 @@ var Note_Space = new function() {
         if(e.detail.mouseDrag){
             this.possibleNewNote = null;
             if(this.selected.length == 0 && !this.multiSelect.isActive && e.detail.mouseY > this.y){
-                this.multiSelect.isActive = true;
-                this.multiSelect.sx = e.detail.mouseX-this.horizontalOffset;
-                this.multiSelect.sy = e.detail.mouseY-this.verticalOffset;
-                this.multiSelect.x = e.detail.mouseX-this.horizontalOffset;
-                this.multiSelect.y = e.detail.mouseY-this.verticalOffset;
-                this.multiSelect.w = 0;
-                this.multiSelect.h = 0;
+                this.multiSelect.startNew(e.detail.mouseX, e.detail.mouseY, this.horizontalOffset, this.verticalOffset);
             }
         }
         
         if(!e.detail.mouseDown || e.detail.mouseX < this.x || e.detail.mouseY < this.y || e.detail.mouseY > this.y+this.height){
-            for(var note in this.selected)
-                this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat);
+            if(!this.selectedSet){
+                for(var note in this.selected)
+                    this.notes.splice(this.findNote(this.notes,this.selected[note]),1);
+                
+                // TODO: check for new max width
+                for(var note in this.selected){
+                    this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat);
+                    this.notes.splice(this.findNoteInsert(this.notes,this.selected[note]),0,this.selected[note]);
+                }
+                this.selectedSet = true;
+            }
         }
         
-        if(e.detail.doubleClick){
+        if(e.detail.doubleClickConsumes > 0){
             for(var note = this.visibleNotes.length-1; note >= 0; note--)
                 if(this.visibleNotes[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
                     this.notes.splice(this.notes.indexOf(this.visibleNotes[note]),1);
                     this.visibleNotes.splice(note,1);
+                    this.selected.splice(this.selected.indexOf(this.visibleNotes[note]),1);
                     break;
                 }
-            e.detail.doubleClick = false;
+            e.detail.doubleClickConsumes--;
         }
+        
+        // use this to make sure that the notes array is in order
+        // var arrStr = "";
+        // for(var note in this.notes)
+        //     arrStr+=this.notes[note].beat+",";
+        // console.log(arrStr);
     }
     
     NoteHandler.prototype.scroll = function(ho, vo){
@@ -218,18 +213,19 @@ var Note_Space = new function() {
     NoteHandler.prototype.draw = function(ctx){
         for(var note in this.visibleNotes)
             this.visibleNotes[note].draw(ctx, this.horizontalOffset, this.verticalOffset);
-        if(this.multiSelect.isActive){
-            ctx.globalAlpha=0.3;
-            ctx.fillStyle = "rgb(50,50,240)";
-            var multiY = this.multiSelect.y+this.verticalOffset;
-            var multiH = this.multiSelect.h;
-            if(multiY < this.y){
-                multiH-=this.y-multiY;
-                multiY = this.y;
-            }
-            ctx.fillRect(this.multiSelect.x+this.horizontalOffset, multiY, this.multiSelect.w, multiH);
-            ctx.globalAlpha=1;
-        }
+        // if(this.multiSelect.isActive){
+        //     ctx.globalAlpha=0.3;
+        //     ctx.fillStyle = "rgb(50,50,240)";
+        //     var multiY = this.multiSelect.y+this.verticalOffset;
+        //     var multiH = this.multiSelect.h;
+        //     if(multiY < this.y){
+        //         multiH-=this.y-multiY;
+        //         multiY = this.y;
+        //     }
+        //     ctx.fillRect(this.multiSelect.x+this.horizontalOffset, multiY, this.multiSelect.w, multiH);
+        //     ctx.globalAlpha=1;
+        // }
+        this.multiSelect.draw(ctx, this.horizontalOffset, this.verticalOffset, this.y);
     }
     
     NoteHandler.prototype.windowResize = function(w,h){
@@ -252,125 +248,59 @@ var Note_Space = new function() {
             this.notes[note].adjustLength(this.PixelsPerBeat, this.x);
     }
     
-    var Note = function(note,beat,length,h,ppb,xs,ys){
-        this.note = note;
-        this.beat = beat;
-        this.length = length;
-        this.height = h;
-        this.px = ppb*this.beat+xs;
-        this.py = h*this.note+ys;
-        this.deltaX = 0;
-        this.deltaY = 0;
-        this.deltaWidth = 0;
-        this.pw = ppb*this.length;
-        this.selected = false;
-        this.resizePadding = 6;
-    }
-    
-    Note.prototype.draw = function(ctx, ho, vo){
-        if(this.selected)
-            ctx.fillStyle = "rgb(100,140,200)";
-        else
-            ctx.fillStyle = "rgb(168,214,238)";
-        ctx.stokeStyle = "rgb(190,235,255)";
-        
-        var x = this.px+ho;
-        var y = this.py+vo;
-        var radius = 6;
-        
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + this.pw - radius, y);
-        ctx.quadraticCurveTo(x + this.pw, y, x + this.pw, y + radius);
-        ctx.lineTo(x + this.pw, y + this.height - radius);
-        ctx.quadraticCurveTo(x + this.pw, y + this.height, x + this.pw - radius, y + this.height);
-        ctx.lineTo(x + radius, y + this.height);
-        ctx.quadraticCurveTo(x, y + this.height, x, y + this.height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath();
-        ctx.stroke();
-        ctx.fill();
-    }
-    
-    Note.prototype.mouseOver = function(mx, my){
-        if(mx > this.px && mx < this.px+this.pw && my > this.py && my < this.py+this.height)
-            return true;
-    }
-    
-    Note.prototype.adjustLength = function(ppb, xs){
-        this.pw = ppb*this.length;
-        this.px = this.beat*ppb+xs;
-    }
-    
-    Note.prototype.moveNote = function(dx,dy){
-        this.deltaX+=dx;
-        this.deltaY+=dy;
-        this.px+=dx;
-        this.py+=dy;
-    }
-    
-    Note.prototype.mouseUp = function(r,ppn,pps,ppb){
-        var beatChange = Math.round(4*this.deltaX/pps)/4;
-        var noteChange = Math.round(this.deltaY/ppn);
-        this.px+=beatChange*pps-this.deltaX;
-        this.py+=noteChange*ppn-this.deltaY;
-        this.deltaX = 0;
-        this.deltaY = 0;
-        this.beat+=beatChange*r;
-        this.note+=noteChange;
-        if(this.beat < 0){
-            this.px+=-this.beat*pps;
-            this.beat = 0;
+    // binary search method
+    NoteHandler.prototype.findNote = function(array, item) {
+ 
+        var minIndex = 0;
+        var maxIndex = array.length - 1;
+        var currentIndex;
+        var currentElement;
+     
+        while (minIndex <= maxIndex) {
+            currentIndex = (minIndex + maxIndex) / 2 | 0;
+            currentElement = array[currentIndex];
+     
+            if (currentElement.beat < item.beat) {
+                minIndex = currentIndex + 1;
+            }
+            else if (currentElement.beat > item.beat) {
+                maxIndex = currentIndex - 1;
+            }
+            else {
+                for(var i = minIndex; i <= maxIndex; i++)
+                    if(array[i] == item)
+                        return i;
+                minIndex++;
+            }
         }
-        if(this.note < 0){
-            this.py+=-this.note*ppn;
-            this.note = 0;
+     
+        console.log("Didn't find");
+        return minIndex;
+    }
+    
+    // binary search method
+    NoteHandler.prototype.findNoteInsert = function(array, item) {
+ 
+        var minIndex = 0;
+        var maxIndex = array.length - 1;
+        var currentIndex;
+        var currentElement;
+     
+        while (minIndex <= maxIndex) {
+            currentIndex = (minIndex + maxIndex) / 2 | 0;
+            currentElement = array[currentIndex];
+     
+            if (currentElement.beat < item.beat) {
+                minIndex = currentIndex + 1;
+            }
+            else if (currentElement.beat > item.beat) {
+                maxIndex = currentIndex - 1;
+            }
+            else {
+                return currentIndex;
+            }
         }
-        
-        var lengthChange = Math.round(4*this.deltaWidth/pps)/4;
-        this.pw+=lengthChange*pps-this.deltaWidth;
-        this.deltaWidth = 0;
-        this.length+=lengthChange*r;
-        if(this.length <= 0){
-            this.length = r/4;
-            this.pw = ppb*this.length;
-        }
-        
-        console.log(this);
-    }
-    
-    Note.prototype.rightResize = function(dx){
-        if(this.pw+dx > 1){
-            this.deltaWidth+=dx;
-            this.pw+=dx;
-        }
-    }
-    
-    Note.prototype.leftResize = function(dx){
-        if(this.pw-dx > 1){
-            this.deltaX+=dx;
-            this.px+=dx;
-            this.deltaWidth-=dx;
-            this.pw-=dx;
-        }
-    }
-    
-    Note.prototype.overLeftEdge = function(mx, my){
-        if(this.pw > this.resizePadding*2.5 && mx > this.px && mx < this.px+this.resizePadding && my > this.py && my < this.py+this.height)
-            return true;
-        return false;
-    }
-    
-    Note.prototype.overRightEdge = function(mx, my){
-        if(this.pw > this.resizePadding*2.5 && mx > this.px+this.pw-this.resizePadding && mx < this.px+this.pw && my > this.py && my < this.py+this.height)
-            return true;
-        return false;
-    }
-    
-    Note.prototype.isVisible = function(x,y,w,h,ho,vo){
-        if(this.px+this.pw+ho > x && this.px+ho < x+w && this.py+this.height+vo > y && this.py+vo < y+h)
-            return true;
-        return false;
+     
+        return minIndex;
     }
 }

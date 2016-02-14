@@ -1,16 +1,16 @@
 // Setup namespace
-// useful link: https://developer.mozilla.org/en-US/docs/Web/Guide/Events/Creating_and_triggering_events
 var Input_Events = new function() {
     
+    // return new inputevents object
     this.init = function(editor){
         this.Inputevents = new InputEvents(editor);
     }
     
-    this.getInputEvents = function(){
-        return this.Inputevents;
-    }
-    
+    // constructor
     var InputEvents = function(editor){
+         
+        // create detail object
+        // reference will be sent to all eventListeners attached to editor
         this.detail = {};
         this.detail.mouseDown = false;
         this.detail.mouseDrag = false;
@@ -20,13 +20,14 @@ var Input_Events = new function() {
         this.detail.deltaX = 0;
         this.detail.deltaY = 0;
         this.detail.scrollConsumes = 0;
-        this.detail.doubleClick = false;
+        this.detail.doubleClickConsumes = 0;
         this.editor = editor;
         this.prevMouseX = -1;
         this.prevMouseY = -1;
         
+        // setup all input methods
         var thisObj = this;
-        // the detail refers to same object
+        // detail refers to same object
         this.inputEvent = new CustomEvent('InputEvent', {"detail":this.detail});
         $(this.editor).mousedown(function(e){thisObj.mouseInputDown(e); return false;});
         $(this.editor).mouseup(function(e){thisObj.mouseInputUp(e); return false;});
@@ -35,22 +36,24 @@ var Input_Events = new function() {
         $(this.editor).dblclick(function(e){e.preventDefault(); thisObj.mouseInputDoubleClick(e); return false;});
         $(document).keydown(function(e){thisObj.keyInputDown(e); return false;});
         $(document).keyup(function(e){thisObj.keyInputUp(e); return false;});
-        
         this.editor.addEventListener('mousewheel',function(e){thisObj.mouseInputWheel(e); return false;});
         
         console.log("New Input Events");
     }
     
+    // keydown
     InputEvents.prototype.keyInputDown = function(event){
         this.detail.keyDown = event.keyCode;
         this.editor.dispatchEvent(this.inputEvent);
     }
     
+    // keyup, set key to null
     InputEvents.prototype.keyInputUp = function(event){
         this.detail.keyDown = null;
         this.editor.dispatchEvent(this.inputEvent);
     }
     
+    // mouse leave canvas
     InputEvents.prototype.mouseInputLeave = function(event){
         this.detail.mouseDown = false;
         this.detail.mouseX = -1;
@@ -58,13 +61,17 @@ var Input_Events = new function() {
         this.editor.dispatchEvent(this.inputEvent);
     }
     
+    // mouse down
     InputEvents.prototype.mouseInputDown = function(event){
         this.detail.mouseX = event.pageX - $(this.editor).offset().left;
         this.detail.mouseY = event.pageY - $(this.editor).offset().top;
+        this.detail.deltaX = 0;
+        this.detail.deltaY = 0;
         this.detail.mouseDown = true;
         this.editor.dispatchEvent(this.inputEvent);
     }
     
+    // mouse up
     InputEvents.prototype.mouseInputUp = function(event){
         this.detail.mouseX = event.pageX - $(this.editor).offset().left;
         this.detail.mouseY = event.pageY - $(this.editor).offset().top;
@@ -75,6 +82,7 @@ var Input_Events = new function() {
         this.editor.dispatchEvent(this.inputEvent);
     }
     
+    // mouse move
     InputEvents.prototype.mouseInputMove = function(event){
         this.detail.mouseX = event.pageX - $(this.editor).offset().left;
         this.detail.mouseY = event.pageY - $(this.editor).offset().top;
@@ -89,15 +97,21 @@ var Input_Events = new function() {
         this.editor.dispatchEvent(this.inputEvent);
     }
     
+    // scroll on editor
     InputEvents.prototype.mouseInputWheel = function(event){
         this.detail.deltaX = event.deltaX;
         this.detail.deltaY = event.deltaY;
+        // no NotScroll method so can't tell when scrolling stops
+        // number of objects checking scroll is 2
+        // each object consumes a scrollConsumes, meaning that scrollConsumes == 0 is NotScroll
         this.detail.scrollConsumes = 2;
         this.editor.dispatchEvent(this.inputEvent);
     }
     
+    // double click
     InputEvents.prototype.mouseInputDoubleClick = function(event){
-        this.detail.doubleClick = true;
+        // consumed by notesHandler
+        this.detail.doubleClickConsumes = 1;
         this.editor.dispatchEvent(this.inputEvent);
     }
 }
