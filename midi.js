@@ -281,10 +281,13 @@ var MIDI = new function() {
         this.maxWidth = m+this.width;
     }
     
-    MIDI_Workspace.prototype.buttonPress = function(){
+    // TODO: add functionality
+    // if a button is pressed, play, pause, stop, or record midi based on which button
+    MIDI_Workspace.prototype.buttonPress = function(b){
         
     }
     
+    // update slider value in midi workspace
     MIDI_Workspace.prototype.sliderChange = function(t,v){
         if(t == "Zoom"){
             this.ZoomLevel = v-6;
@@ -297,6 +300,7 @@ var MIDI = new function() {
             this.BPM = v;
     }
     
+    // midi workspace is always ready
     MIDI_Workspace.prototype.isReady = function(){
         return true;
     }

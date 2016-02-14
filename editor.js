@@ -61,7 +61,7 @@ var MIDI_Editor = new function() {
             }
         },300);
         
-        console.log("New editor created");
+        console.log("New Editor created");
     }
     
     // sets dimensions of editor according to window size

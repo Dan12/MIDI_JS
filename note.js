@@ -1,23 +1,40 @@
 // Setup namespace
 var Note_Space = new function() {
     
+    // return a new note
     this.createNote = function(note,beat,length,h,ppb,xs,ys){
         return new Note(note,beat,length,h,ppb,xs,ys);
     }
     
+    /**
+     * A note
+     * note-index of key code
+     * beat-beat that note starts on
+     * length-length in beats of note
+     * h-height of note (midi keysize)
+     * ppb-pixels per beat
+     * xs-x start position of input handler window
+     * ys-y start position of input handler window
+     */
     var Note = function(note,beat,length,h,ppb,xs,ys){
         this.note = note;
         this.beat = beat;
         this.length = length;
         this.height = h;
+        
+        // set absolute pixel positions for the note's x and y position
         this.px = ppb*this.beat+xs;
         this.py = h*this.note+ys;
+        
+        // used 
         this.deltaX = 0;
         this.deltaY = 0;
         this.deltaWidth = 0;
+        
+        // length in pixels
         this.pw = ppb*this.length;
         this.selected = false;
-        this.resizePadding = 5;
+        this.minResizePadding = 15;
     }
     
     Note.prototype.draw = function(ctx, ho, vo){
@@ -108,13 +125,13 @@ var Note_Space = new function() {
     }
     
     Note.prototype.overLeftEdge = function(mx, my){
-        if(this.pw > this.resizePadding*3 && mx > this.px && mx < this.px+this.resizePadding && my > this.py && my < this.py+this.height)
+        if(this.pw > this.minResizePadding && mx > this.px && mx < this.px+this.pw/3 && my > this.py && my < this.py+this.height)
             return true;
         return false;
     }
     
     Note.prototype.overRightEdge = function(mx, my){
-        if(this.pw > this.resizePadding*3 && mx > this.px+this.pw-this.resizePadding && mx < this.px+this.pw && my > this.py && my < this.py+this.height)
+        if(this.pw > this.minResizePadding && mx > this.px+this.pw-this.pw/3 && mx < this.px+this.pw && my > this.py && my < this.py+this.height)
             return true;
         return false;
     }

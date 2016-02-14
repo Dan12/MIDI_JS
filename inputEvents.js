@@ -36,7 +36,7 @@ var Input_Events = new function() {
         $(this.editor).dblclick(function(e){e.preventDefault(); thisObj.mouseInputDoubleClick(e); return false;});
         $(document).keydown(function(e){thisObj.keyInputDown(e); return false;});
         $(document).keyup(function(e){thisObj.keyInputUp(e); return false;});
-        this.editor.addEventListener('mousewheel',function(e){thisObj.mouseInputWheel(e); return false;});
+        this.editor.addEventListener('mousewheel',function(e){e.preventDefault(); thisObj.mouseInputWheel(e); return false;});
         
         console.log("New Input Events");
     }

@@ -1,233 +1,123 @@
 // Setup namespace
 var Note_Handler = new function() {
     
+    // return new note handler
     this.init = function(editor, x, y, w, h, p, m){
         return new NoteHandler(editor, x, y, w, h, p, m);
     }
     
+    var getNoteHandler = function(){
+        return NoteHandler;
+    }
+    
+    /**
+     * NoteHandler-creates and handles all of the notes as well 
+     *      as being the parent object for all note activities
+     * editor-html element of editor where input events are sent to
+     * x-x position of note handler window
+     * y-y position of note handler window
+     * w-width of note handler window
+     * h-height of note handler window
+     * p-Pixels Per Section, constant set by parent
+     * m-midi editor to make calls for max width and midi playing
+     *
+     */
     var NoteHandler = function(editor, x, y, w, h, p, m){
-        this.notes = [];
-        this.visibleNotes = [];
-        this.beatAt = 0;
-        this.resolution = 1;
-        this.PixelsPerSection = p;
-        this.PixelsPerNote = x;
-        this.PixelsPerBeat = this.PixelsPerSection/this.resolution;
         this.x = x;
         this.y = y;
         this.width = w;
         this.height = h;
+        this.PixelsPerSection = p;
+        this.midiEditor = m;
+        
+        // array of all notes in order by the beat that they start on
+        this.notes = [];
+        /* array of visible notes, containing references to the notes in the note array
+         * used to eliminate searching through notes not on the screen for note actions
+         * updated every time view window chanes (scrolling and resizing) 
+         */
+        this.visibleNotes = [];
+        // beat at, used when playing and sets midi workspace scrub bar on play
+        this.beatAt = 0;
+        // resolution in beats per section
+        this.resolution = 1;
+        // pixels per note is keysize from midi workspace, which is the x position of the note handler window
+        this.PixelsPerNote = x;
+        // pixels per beat
+        this.PixelsPerBeat = this.PixelsPerSection/this.resolution;
+        
+        // mirror midi workspace offsets
         this.verticalOffset = 0;
         this.horizontalOffset = 0;
+        
+        // array of references to selected notes
         this.selected = [];
-        this.possibleNewNote = null;
+        // object for drag window selector
         this.multiSelect = Multi_Select_Space.init();
+        /* is the mouse up after a selection was made?, used to deselect on next click 
+         * if none of the currently selected items is clicked
+         * also used to make sure a new note isn't created when a selection 
+         * is deselected by clicking on empty space
+         */
         this.selectedMouseUp = true;
-        this.editor = editor;
+        // possible new note, only created if no mouse drag 
+        // as that would indicate a drag window selctor
+        this.possibleNewNote = null;
+        
+        // -1-no resizing initialized, 0-no resizing, just draggin, 1-left edge resizing, 2-right edge resizing
         this.resizing = -1;
-        this.midiEditor = m;
+        // farthest note, used to set midi maximum width
         this.farthestNote = 0;
+        // set to true to avoid going through selected notes every time there is a mouse move,
+        // set to false for initial mouse down check
         this.selectedSet = false;
         
+        // set generalInput function for note handler
+        // moved to a sperate file due to size
+        Set_Note_Handler_Input.init(NoteHandler);
+        
+        // save reference for changing the cursor
+        // add event listener to editor and call local method to process input data
+        this.editor = editor;
         var thisObj = this;
         this.editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
         
         console.log("New Note Handler created");
     }
     
-    NoteHandler.prototype.generalInput = function(e){
-        if(e.detail.mouseDown){
-            var exit = false;
-            if(!this.multiSelect.isActive){
-                if(this.selected.length == 0){
-                    for(var note = this.visibleNotes.length-1; note >= 0; note--)
-                        if(this.visibleNotes[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
-                            this.visibleNotes[note].selected = true;
-                            this.selected.push(this.visibleNotes[note]);
-                            this.selectedMouseUp = false;
-                            exit = true;
-                            break;
-                        }
-                }
-                else{
-                    if(!this.selectedMouseUp){
-                        if(this.resizing == -1)
-                            for(var note in this.selected){
-                                if(this.selected[note].overLeftEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
-                                    this.resizing = 1;
-                                    break
-                                }
-                                else if(this.selected[note].overRightEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
-                                    this.resizing = 2;
-                                    break;
-                                }
-                            }
-                            
-                        if(this.resizing == -1)
-                            this.resizing = 0;
-                        
-                        for(var note in this.selected){
-                            if(this.resizing == 1)
-                                this.selected[note].leftResize(e.detail.deltaX)
-                            else if(this.resizing == 2)
-                                this.selected[note].rightResize(e.detail.deltaX)
-                            else
-                                this.selected[note].moveNote(e.detail.deltaX, e.detail.deltaY);
-                        }
-                        this.selectedSet = false;
-                        exit = true;
-                    }
-                    else{
-                        for(var note in this.selected)
-                            if(this.selected[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset))
-                                this.selectedMouseUp = false;
-                    }
-                }
-            }
-            else{
-                
-                this.multiSelect.update(e.detail.mouseX, e.detail.mouseY, this.horizontalOffset, this.verticalOffset);
-                
-                // put selected ones into selected
-                for(var note in this.visibleNotes){
-                    if(!this.visibleNotes[note].selected && this.multiSelect.noteInMulti(this.visibleNotes[note])){
-                        this.selected.push(this.visibleNotes[note]);
-                        this.visibleNotes[note].selected = true;
-                    }
-                    if(this.visibleNotes[note].selected && !this.multiSelect.noteInMulti(this.visibleNotes[note])){
-                        this.selected.splice(this.selected.indexOf(this.visibleNotes[note]),1);
-                        this.visibleNotes[note].selected = false;
-                    }
-                }
-                exit = true;
-            }
-            
-            if(!exit && this.selectedMouseUp && this.selected.length != 0){
-                for(var note in this.selected)
-                    this.selected[note].selected = false;
-                this.selected = [];
-                exit = true;
-            }
-            
-            if(!exit && this.selectedMouseUp && e.detail.mouseX > this.x && e.detail.mouseX < this.x+this.width && e.detail.mouseY > this.y && e.detail.mouseY < this.y+this.height)
-                this.possibleNewNote = Note_Space.createNote(Math.floor((e.detail.mouseY-this.y-this.verticalOffset)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
-                //this.possibleNewNote = Note_Space.createNote(Math.floor((e.detail.mouseY-this.y-this.verticalOffset-5)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset-4)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
-        }
-        else{
-            if(this.possibleNewNote != null){
-                this.notes.splice(this.findNoteInsert(this.notes, this.possibleNewNote), 0, this.possibleNewNote);
-                this.visibleNotes.push(this.possibleNewNote);
-                if(this.possibleNewNote.px+this.possibleNewNote.pw > this.farthestNote){
-                    this.farthestNote = this.possibleNewNote.px+this.possibleNewNote.pw;
-                    this.midiEditor.setMaxWidth(this.farthestNote*this.resolution);
-                }
-                this.possibleNewNote = null;
-            }
-            this.selectedMouseUp = true;
-            this.multiSelect.isActive = false;
-            this.resizing = -1;
-            
-            var changeCursor = false;
-            for(var i = this.selected.length-1; i >= 0; i--)
-                if(this.selected[i].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
-                    if(this.selected[i].overLeftEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset) || this.selected[i].overRightEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
-                        $(this.editor).css("cursor","col-resize");
-                        changeCursor = true;
-                    }
-                    break;
-                }
-            if(!changeCursor)
-                $(this.editor).css("cursor","default");
-        }
-        
-        if(e.detail.keyDown == 27){
-            for(var note in this.selected)
-                this.selected[note].selected = false;
-            this.selected = [];
-        }
-        else if(e.detail.keyDown == 8){
-            for(var note in this.selected){
-                this.notes.splice(this.notes.indexOf(this.selected[note]),1);
-                var visInd = this.visibleNotes.indexOf(this.selected[note]);
-                if(visInd != -1)
-                    this.visibleNotes.splice(visInd,1);
-            }
-            this.selected = [];
-        }
-        
-        if(e.detail.mouseDrag){
-            this.possibleNewNote = null;
-            if(this.selected.length == 0 && !this.multiSelect.isActive && e.detail.mouseY > this.y){
-                this.multiSelect.startNew(e.detail.mouseX, e.detail.mouseY, this.horizontalOffset, this.verticalOffset);
-            }
-        }
-        
-        if(!e.detail.mouseDown || e.detail.mouseX < this.x || e.detail.mouseY < this.y || e.detail.mouseY > this.y+this.height){
-            if(!this.selectedSet){
-                for(var note in this.selected)
-                    this.notes.splice(this.findNote(this.notes,this.selected[note]),1);
-                
-                // TODO: check for new max width
-                for(var note in this.selected){
-                    this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat);
-                    this.notes.splice(this.findNoteInsert(this.notes,this.selected[note]),0,this.selected[note]);
-                }
-                this.selectedSet = true;
-            }
-        }
-        
-        if(e.detail.doubleClickConsumes > 0){
-            for(var note = this.visibleNotes.length-1; note >= 0; note--)
-                if(this.visibleNotes[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
-                    this.notes.splice(this.notes.indexOf(this.visibleNotes[note]),1);
-                    this.visibleNotes.splice(note,1);
-                    this.selected.splice(this.selected.indexOf(this.visibleNotes[note]),1);
-                    break;
-                }
-            e.detail.doubleClickConsumes--;
-        }
-        
-        // use this to make sure that the notes array is in order
-        // var arrStr = "";
-        // for(var note in this.notes)
-        //     arrStr+=this.notes[note].beat+",";
-        // console.log(arrStr);
-    }
-    
+    // on mouse scroll
     NoteHandler.prototype.scroll = function(ho, vo){
+        // set offsets and change in offsets
         var dx = this.horizontalOffset-ho;
         var dy = this.verticalOffset-vo;
         this.horizontalOffset = ho;
         this.verticalOffset = vo;
         
+        /* when dragging selected notes move them by the change in the offsets
+         * change in offset used because absolute note positions are changing
+         * make sure multiselect is not active because it adds notes to selected while dragging
+         * make sure that selectedMouseUp is false, meaning that we are dragging and not just scrolling
+         */
         if(!this.multiSelect.isActive && !this.selectedMouseUp)
             for(var note in this.selected)
                 this.selected[note].moveNote(dx,dy);
         
+        // reset visible notes array
         this.visibleNotes = [];
+        // go through notes and add those in the note handler window to visibleNotes
         for(var note in this.notes)
             if(this.notes[note].isVisible(this.x, this.y, this.width, this.height, this.horizontalOffset, this.verticalOffset))
                 this.visibleNotes.push(this.notes[note]);
     }
     
+    // draw all visible notes and multiselect
     NoteHandler.prototype.draw = function(ctx){
         for(var note in this.visibleNotes)
             this.visibleNotes[note].draw(ctx, this.horizontalOffset, this.verticalOffset);
-        // if(this.multiSelect.isActive){
-        //     ctx.globalAlpha=0.3;
-        //     ctx.fillStyle = "rgb(50,50,240)";
-        //     var multiY = this.multiSelect.y+this.verticalOffset;
-        //     var multiH = this.multiSelect.h;
-        //     if(multiY < this.y){
-        //         multiH-=this.y-multiY;
-        //         multiY = this.y;
-        //     }
-        //     ctx.fillRect(this.multiSelect.x+this.horizontalOffset, multiY, this.multiSelect.w, multiH);
-        //     ctx.globalAlpha=1;
-        // }
         this.multiSelect.draw(ctx, this.horizontalOffset, this.verticalOffset, this.y);
     }
     
+    // adjust height and with on window resize
     NoteHandler.prototype.windowResize = function(w,h){
         this.width = w;
         this.height = h;
@@ -241,6 +131,7 @@ var Note_Handler = new function() {
         
     }
     
+    // resolution changed, update note pixel lengths and positions
     NoteHandler.prototype.changeResolution = function(r){
         this.resolution = r;
         this.PixelsPerBeat = this.PixelsPerSection/this.resolution;
@@ -248,7 +139,7 @@ var Note_Handler = new function() {
             this.notes[note].adjustLength(this.PixelsPerBeat, this.x);
     }
     
-    // binary search method
+    // binary search for index of note based on the fact that the array should be in order
     NoteHandler.prototype.findNote = function(array, item) {
  
         var minIndex = 0;
@@ -270,15 +161,21 @@ var Note_Handler = new function() {
                 for(var i = minIndex; i <= maxIndex; i++)
                     if(array[i] == item)
                         return i;
+                // stops infinite recursion if note is not found
                 minIndex++;
             }
         }
      
+        // this is bad
         console.log("Didn't find");
+        console.log(array);
+        console.log(item);
+        console.log(currentIndex+","+minIndex+","+maxIndex);
+        alert("Critical Error! Didn't find note");
         return minIndex;
     }
     
-    // binary search method
+    // binary search for note insertion index so that their beats are in numerical order
     NoteHandler.prototype.findNoteInsert = function(array, item) {
  
         var minIndex = 0;
