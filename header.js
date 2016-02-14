@@ -7,22 +7,22 @@ var Editor_Header = new function() {
     var buttonMargin = 120;
     var sliderSize = 30;
     
-    this.init = function(editor, vw, h){
-        return new Header(editor, vw, h);
+    this.init = function(editor, vw, h, m){
+        return new Header(editor, vw, h, m);
     }
     
     //editor header
-    var Header = function(editor, vw, h){
+    var Header = function(editor, vw, h, m){
         console.log("New Header Created");
         this.viewWidth = vw;
         this.height = h;
         this.items = [];
-        this.items.push(new Button(itemLeftPadding,10,"Play","icons/play.png"));
-        this.items.push(new Button(itemLeftPadding+buttonMargin,10,"Pause","icons/pause.png"));
-        this.items.push(new Button(itemLeftPadding+buttonMargin*2,10,"Stop","icons/stop.png"));
-        this.items.push(new Slider(itemLeftPadding+buttonMargin*3,30,-5,5,0,"Zoom"));
-        this.items.push(new Slider(itemLeftPadding+buttonMargin*4,30,0.1,1.5,1,"Playback Speed"));
-        this.items.push(new Slider(itemLeftPadding+buttonMargin*5,30,60,180,140,"BPM"));
+        this.items.push(new Button(itemLeftPadding,10,"Play","icons/play.png",m));
+        this.items.push(new Button(itemLeftPadding+buttonMargin,10,"Pause","icons/pause.png",m));
+        this.items.push(new Button(itemLeftPadding+buttonMargin*2,10,"Stop","icons/stop.png",m));
+        this.items.push(new Slider(itemLeftPadding+buttonMargin*3,30,3,9,6,"Zoom",m));
+        this.items.push(new Slider(itemLeftPadding+buttonMargin*4,30,60,180,140,"BPM",m));
+        //this.items.push(new Slider(itemLeftPadding+buttonMargin*5,30,10,150,100,"Playback Speed",m));
         
         var thisObj = this;
         editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
@@ -31,6 +31,16 @@ var Editor_Header = new function() {
     Header.prototype.generalInput = function(e){
         for (var item in this.items)
             this.items[item].checkMouseOver(e.detail.mouseX, e.detail.mouseY);
+        if(e.detail.mouseDown)
+            for (var item in this.items)
+                this.items[item].checkMouseDown(e.detail);
+        if(e.detail.scrollConsumes > 0){
+            e.detail.scrollConsumes--;
+            for (var item in this.items){
+                if(this.items[item] instanceof Slider)
+                    this.items[item].smallInc(Math.floor(e.detail.deltaX));
+            }
+        }
     }
     
     Header.prototype.windowResize = function(width, height){
@@ -54,7 +64,7 @@ var Editor_Header = new function() {
         return true;
     }
     
-    var Slider = function(x,y,min,max,d,t){
+    var Slider = function(x,y,min,max,d,t,m){
         this.x = x;
         this.y = y;
         this.width = 80;
@@ -64,6 +74,7 @@ var Editor_Header = new function() {
         this.value = d;
         this.text = t;
         this.mouseOver = false;
+        this.midiWorkspace = m;
     }
     
     Slider.prototype.draw = function(ctx){
@@ -97,7 +108,22 @@ var Editor_Header = new function() {
             this.mouseOver = false;
     }
     
-    var Button = function(x,y,t,i){
+    Slider.prototype.checkMouseDown = function(e){
+        if(this.mouseOver)
+            this.setValue(Math.round(map(e.mouseX,this.x,this.x+this.width,this.min,this.max)));
+    }
+    
+    Slider.prototype.smallInc = function(dx){
+        if(this.mouseOver)
+            this.setValue(Math.max(Math.min(this.value+dx,this.max),this.min));
+    }
+    
+    Slider.prototype.setValue = function(v){
+        this.value = v;
+        this.midiWorkspace.sliderChange(this.text,this.value);
+    }
+    
+    var Button = function(x,y,t,i,m){
         this.x = x;
         this.y = y;
         this.text = t;
@@ -106,6 +132,8 @@ var Editor_Header = new function() {
         this.icon = new Image(this.width,this.height);
         this.ready = false;
         this.mouseOver = false;
+        this.pressed = false;
+        this.midiWorkspace = m;
         
         var thisObj = this;
         this.icon.addEventListener("load", function() {
@@ -132,7 +160,18 @@ var Editor_Header = new function() {
     Button.prototype.checkMouseOver = function(mx,my){
         if(mx > this.x && mx < this.x+this.width && my > this.y && my < this.y+this.height)
             this.mouseOver = true;
-        else
+        else{
             this.mouseOver = false;
+            this.mouseDown = false;
+        }
+    }
+    
+    Button.prototype.checkMouseDown = function(e){
+        if(this.mouseOver)
+            this.pressed = true;
+    }
+    
+    var map = function(x, in_min, in_max, out_min, out_max){
+      return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
     }
 }

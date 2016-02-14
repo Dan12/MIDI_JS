@@ -30,8 +30,9 @@ var MIDI_Editor = new function() {
         this.setDimensions();
         console.log("New editor created");
         
-        this.items.push(Editor_Header.init(this.canvas, this.width, headerHeight));
-        this.items.push(MIDI.init(this.canvas, this.width, this.height, headerHeight, this));
+        var midiWorkspace = MIDI.init(this.canvas, this.width, this.height, headerHeight, this);
+        this.items.push(midiWorkspace);
+        this.items.push(Editor_Header.init(this.canvas, this.width, headerHeight, midiWorkspace));
         
         var thisObj = this;
         $(window).resize(function(){
