@@ -183,12 +183,15 @@ var Set_Note_Handler_Input = new function() {
             if(!e.detail.mouseDown || e.detail.mouseX < this.x || e.detail.mouseY < this.y || e.detail.mouseY > this.y+this.height){
                 // check so that this isn't done every single time there is a mouse movement
                 if(!this.selectedSet){
+                    // remove the selected notes from the notes array because they could have changed position
+                    // and the notes array needs to remain ordered
                     for(var note in this.selected)
                         this.notes.splice(this.findNote(this.notes,this.selected[note]),1);
                     
                     // TODO: check for new max width
                     for(var note in this.selected){
-                        this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat);
+                        this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat, this.maxKeys);
+                        // reinsert selected notes into notes array in their correct place
                         this.notes.splice(this.findNoteInsert(this.notes,this.selected[note]),0,this.selected[note]);
                     }
                     this.selectedSet = true;

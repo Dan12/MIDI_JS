@@ -79,7 +79,7 @@ var MIDI = new function() {
         // max width of editor in pixels, max horizontal scroll
         this.maxWidth = this.width;
         // create new note handler and pass in editor dimensions, constants, and reference to this
-        this.noteHandler = Note_Handler.init(editor, keySize, this.heightOffset+scrubBarHeight, this.width-keySize, this.height-scrubBarHeight-scrollBarWidth, PixelsPerSection, this);
+        this.noteHandler = Note_Handler.init(editor, keySize, this.heightOffset+scrubBarHeight, this.width-keySize, this.height-scrubBarHeight-scrollBarWidth, PixelsPerSection, keyPairs.length, this);
         
         // add listener to editor for input event, trigger this objects input method and pass event data
         var thisObj = this;

@@ -2,8 +2,8 @@
 var Note_Handler = new function() {
     
     // return new note handler
-    this.init = function(editor, x, y, w, h, p, m){
-        return new NoteHandler(editor, x, y, w, h, p, m);
+    this.init = function(editor, x, y, w, h, p, mk, m){
+        return new NoteHandler(editor, x, y, w, h, p, mk, m);
     }
     
     var getNoteHandler = function(){
@@ -19,15 +19,17 @@ var Note_Handler = new function() {
      * w-width of note handler window
      * h-height of note handler window
      * p-Pixels Per Section, constant set by parent
+     * mn-maximun number of keys
      * m-midi editor to make calls for max width and midi playing
      *
      */
-    var NoteHandler = function(editor, x, y, w, h, p, m){
+    var NoteHandler = function(editor, x, y, w, h, p, mk, m){
         this.x = x;
         this.y = y;
         this.width = w;
         this.height = h;
         this.PixelsPerSection = p;
+        this.maxKeys = mk;
         this.midiEditor = m;
         
         // array of all notes in order by the beat that they start on
@@ -102,6 +104,7 @@ var Note_Handler = new function() {
             for(var note in this.selected)
                 this.selected[note].moveNote(dx,dy);
         
+        // TODO: make this run faster by initially checking by beat range of window
         // reset visible notes array
         this.visibleNotes = [];
         // go through notes and add those in the note handler window to visibleNotes
