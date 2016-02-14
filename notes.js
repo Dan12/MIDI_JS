@@ -1,11 +1,11 @@
 // Setup namespace
 var Note_Space = new function() {
     
-    this.init = function(editor, x, y, w, h, p){
-        return new NoteHandler(editor, x, y, w, h, p);
+    this.init = function(editor, x, y, w, h, p, m){
+        return new NoteHandler(editor, x, y, w, h, p, m);
     }
     
-    var NoteHandler = function(editor, x, y, w, h, p){
+    var NoteHandler = function(editor, x, y, w, h, p, m){
         this.notes = [];
         this.visibleNotes = [];
         this.beatAt = 0;
@@ -30,9 +30,13 @@ var Note_Space = new function() {
         this.multiSelect.w = 0;
         this.multiSelect.h = 0;
         this.selectedMouseUp = true;
+        this.editor = editor;
+        this.resizing = -1;
+        this.midiEditor = m;
+        this.farthestNote = 0;
         
         var thisObj = this;
-        editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
+        this.editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
         
         console.log("New Note Handler created");
     }
@@ -42,7 +46,7 @@ var Note_Space = new function() {
             var exit = false;
             if(!this.multiSelect.isActive){
                 if(this.selected.length == 0){
-                    for(var note in this.visibleNotes)
+                    for(var note = this.visibleNotes.length-1; note >= 0; note--)
                         if(this.visibleNotes[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
                             this.visibleNotes[note].selected = true;
                             this.selected.push(this.visibleNotes[note]);
@@ -53,8 +57,29 @@ var Note_Space = new function() {
                 }
                 else{
                     if(!this.selectedMouseUp){
-                        for(var note in this.selected)
-                            this.selected[note].moveNote(e.detail.deltaX, e.detail.deltaY);
+                        if(this.resizing == -1)
+                            for(var note in this.selected){
+                                if(this.selected[note].overLeftEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
+                                    this.resizing = 1;
+                                    break
+                                }
+                                else if(this.selected[note].overRightEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
+                                    this.resizing = 2;
+                                    break;
+                                }
+                            }
+                            
+                        if(this.resizing == -1)
+                            this.resizing = 0;
+                        
+                        for(var note in this.selected){
+                            if(this.resizing == 1)
+                                this.selected[note].leftResize(e.detail.deltaX)
+                            else if(this.resizing == 2)
+                                this.selected[note].rightResize(e.detail.deltaX)
+                            else
+                                this.selected[note].moveNote(e.detail.deltaX, e.detail.deltaY);
+                        }
                         exit = true;
                     }
                     else{
@@ -83,13 +108,12 @@ var Note_Space = new function() {
                 }
                 console.log(this.multiSelect);
                 // put selected ones into selected
-                for(var note in this.visibleNotes){
-                    console.log();
-                    if(!this.visibleNotes[note].selected && this.visibleNotes[note].px+this.visibleNotes[note].pw > this.multiSelect.x && this.visibleNotes[note].px < this.multiSelect.x+this.multiSelect.w && this.visibleNotes[note].py+this.visibleNotes[note].height > this.multiSelect.y && this.visibleNotes[note].py < this.visibleNotes[note].y+this.visibleNotes[note].h){
+                for(var note in this.visibleNotes)
+                    if(!this.visibleNotes[note].selected && this.visibleNotes[note].px+this.visibleNotes[note].pw > this.multiSelect.x && this.visibleNotes[note].px < this.multiSelect.x+this.multiSelect.w && this.visibleNotes[note].py+this.visibleNotes[note].height > this.multiSelect.y && this.visibleNotes[note].py < this.multiSelect.y+this.multiSelect.h){
                         this.selected.push(this.visibleNotes[note]);
                         this.visibleNotes[note].selected = true;
                     }
-                }
+                exit = true;
             }
             
             if(!exit && this.selectedMouseUp && this.selected.length != 0){
@@ -99,18 +123,36 @@ var Note_Space = new function() {
                 exit = true;
             }
             
-            if(!exit && e.detail.mouseX > this.x && e.detail.mouseX < this.x+this.width && e.detail.mouseY > this.y && e.detail.mouseY < this.y+this.height)
-                this.possibleNewNote = new Note(Math.floor((e.detail.mouseY-this.y-this.verticalOffset-5)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset-4)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
+            if(!exit && this.selectedMouseUp && e.detail.mouseX > this.x && e.detail.mouseX < this.x+this.width && e.detail.mouseY > this.y && e.detail.mouseY < this.y+this.height)
+                this.possibleNewNote = new Note(Math.floor((e.detail.mouseY-this.y-this.verticalOffset)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
+                //this.possibleNewNote = new Note(Math.floor((e.detail.mouseY-this.y-this.verticalOffset-5)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset-4)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
         }
         else{
             if(this.possibleNewNote != null){
                 this.notes.push(this.possibleNewNote);
                 this.visibleNotes.push(this.possibleNewNote);
+                if(this.possibleNewNote.px+this.possibleNewNote.pw > this.farthestNote){
+                    this.farthestNote = this.possibleNewNote.px+this.possibleNewNote.pw;
+                    this.midiEditor.setMaxWidth(this.farthestNote);
+                }
                 this.possibleNewNote = null;
                 console.log(this.notes);  
             }
             this.selectedMouseUp = true;
             this.multiSelect.isActive = false;
+            this.resizing = -1;
+            
+            var changeCursor = false;
+            for(var i = this.selected.length-1; i >= 0; i--)
+                if(this.selected[i].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
+                    if(this.selected[i].overLeftEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset) || this.selected[i].overRightEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
+                        $(this.editor).css("cursor","col-resize");
+                        changeCursor = true;
+                    }
+                    break;
+                }
+            if(!changeCursor)
+                $(this.editor).css("cursor","default");
         }
         
         if(e.detail.keyDown == 27){
@@ -118,10 +160,19 @@ var Note_Space = new function() {
                 this.selected[note].selected = false;
             this.selected = [];
         }
+        else if(e.detail.keyDown == 8){
+            for(var note in this.selected){
+                this.notes.splice(this.notes.indexOf(this.selected[note]),1);
+                var visInd = this.visibleNotes.indexOf(this.selected[note]);
+                if(visInd != -1)
+                    this.visibleNotes.splice(visInd,1);
+            }
+            this.selected = [];
+        }
         
         if(e.detail.mouseDrag){
             this.possibleNewNote = null;
-            if(this.selected.length == 0 && !this.multiSelect.isActive){
+            if(this.selected.length == 0 && !this.multiSelect.isActive && e.detail.mouseY > this.y){
                 this.multiSelect.isActive = true;
                 this.multiSelect.sx = e.detail.mouseX-this.horizontalOffset;
                 this.multiSelect.sy = e.detail.mouseY-this.verticalOffset;
@@ -134,11 +185,11 @@ var Note_Space = new function() {
         
         if(!e.detail.mouseDown || e.detail.mouseX < this.x || e.detail.mouseY < this.y || e.detail.mouseY > this.y+this.height){
             for(var note in this.selected)
-                this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection);
+                this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat);
         }
         
         if(e.detail.doubleClick){
-            for(var note in this.visibleNotes)
+            for(var note = this.visibleNotes.length-1; note >= 0; note--)
                 if(this.visibleNotes[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
                     this.notes.splice(this.notes.indexOf(this.visibleNotes[note]),1);
                     this.visibleNotes.splice(note,1);
@@ -154,8 +205,9 @@ var Note_Space = new function() {
         this.horizontalOffset = ho;
         this.verticalOffset = vo;
         
-        for(var note in this.selected)
-            this.selected[note].moveNote(dx,dy);
+        if(!this.multiSelect.isActive && !this.selectedMouseUp)
+            for(var note in this.selected)
+                this.selected[note].moveNote(dx,dy);
         
         this.visibleNotes = [];
         for(var note in this.notes)
@@ -181,10 +233,11 @@ var Note_Space = new function() {
     }
     
     NoteHandler.prototype.windowResize = function(w,h){
-        
+        this.width = w;
+        this.height = h;
     }
     
-    NoteHandler.prototype.play = function(bpm, sa){
+    NoteHandler.prototype.play = function(bpm, scrubAt){
         
     }
     
@@ -208,8 +261,10 @@ var Note_Space = new function() {
         this.py = h*this.note+ys;
         this.deltaX = 0;
         this.deltaY = 0;
+        this.deltaWidth = 0;
         this.pw = ppb*this.length;
         this.selected = false;
+        this.resizePadding = 6;
     }
     
     Note.prototype.draw = function(ctx, ho, vo){
@@ -255,7 +310,7 @@ var Note_Space = new function() {
         this.py+=dy;
     }
     
-    Note.prototype.mouseUp = function(r,ppn,pps){
+    Note.prototype.mouseUp = function(r,ppn,pps,ppb){
         var beatChange = Math.round(4*this.deltaX/pps)/4;
         var noteChange = Math.round(this.deltaY/ppn);
         this.px+=beatChange*pps-this.deltaX;
@@ -272,7 +327,45 @@ var Note_Space = new function() {
             this.py+=-this.note*ppn;
             this.note = 0;
         }
+        
+        var lengthChange = Math.round(4*this.deltaWidth/pps)/4;
+        this.pw+=lengthChange*pps-this.deltaWidth;
+        this.deltaWidth = 0;
+        this.length+=lengthChange*r;
+        if(this.length <= 0){
+            this.length = r/4;
+            this.pw = ppb*this.length;
+        }
+        
         console.log(this);
+    }
+    
+    Note.prototype.rightResize = function(dx){
+        if(this.pw+dx > 1){
+            this.deltaWidth+=dx;
+            this.pw+=dx;
+        }
+    }
+    
+    Note.prototype.leftResize = function(dx){
+        if(this.pw-dx > 1){
+            this.deltaX+=dx;
+            this.px+=dx;
+            this.deltaWidth-=dx;
+            this.pw-=dx;
+        }
+    }
+    
+    Note.prototype.overLeftEdge = function(mx, my){
+        if(this.pw > this.resizePadding*2.5 && mx > this.px && mx < this.px+this.resizePadding && my > this.py && my < this.py+this.height)
+            return true;
+        return false;
+    }
+    
+    Note.prototype.overRightEdge = function(mx, my){
+        if(this.pw > this.resizePadding*2.5 && mx > this.px+this.pw-this.resizePadding && mx < this.px+this.pw && my > this.py && my < this.py+this.height)
+            return true;
+        return false;
     }
     
     Note.prototype.isVisible = function(x,y,w,h,ho,vo){

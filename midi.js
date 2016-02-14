@@ -45,8 +45,8 @@ var MIDI = new function() {
         this.edgeScroll = false;
         this.scrollInterval = null;
         this.drawClass = dc;
-        this.maxWidth = this.width*2;
-        this.noteHandler = Note_Space.init(editor, keySize, this.heightOffset+scrubBarHeight, this.width-keySize, this.height-scrubBarHeight-scrollBarWidth, PixelsPerSection);
+        this.maxWidth = this.width;
+        this.noteHandler = Note_Space.init(editor, keySize, this.heightOffset+scrubBarHeight, this.width-keySize, this.height-scrubBarHeight-scrollBarWidth, PixelsPerSection, this);
         
         var thisObj = this;
         editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
@@ -120,7 +120,7 @@ var MIDI = new function() {
         this.width = width;
         this.height = height-this.heightOffset;
         this.canvasScroll(0,0);
-        this.noteHandler.windowResize(width, height);
+        this.noteHandler.windowResize(this.width-keySize, this.height-scrubBarHeight-scrollBarWidth);
     }
     
     MIDI_Workspace.prototype.draw = function(ctx){
@@ -137,6 +137,10 @@ var MIDI = new function() {
             ctx.lineTo(i*PixelsPerSection+keySize+this.horizontalOffset%PixelsPerSection,this.height+this.heightOffset);
             ctx.stroke();
         }
+        
+        // draw notes
+        this.noteHandler.draw(ctx);
+        
         // scrub bar bottom
         var scrubBarCenter = this.scrubBarAt*this.BeatsToPixels+this.horizontalOffset+keySize;
         ctx.strokeStyle = "rgb(0,0,220)";
@@ -144,9 +148,6 @@ var MIDI = new function() {
         ctx.moveTo(scrubBarCenter,this.heightOffset+scrubBarHeight);
         ctx.lineTo(scrubBarCenter,this.heightOffset+this.height);
         ctx.stroke();
-        
-        // draw notes
-        this.noteHandler.draw(ctx);
     
         // draw keys
         ctx.fillStyle = "rgb(240,240,240)";
@@ -213,6 +214,11 @@ var MIDI = new function() {
         ctx.strokeStyle = "rgb(170,170,170)";
         ctx.strokeRect(borderWidth/2,this.heightOffset+borderWidth/2,this.width-borderWidth,this.height-borderWidth);
     
+    }
+    
+    MIDI_Workspace.prototype.setMaxWidth = function(m){
+        this.maxWidth = m+this.width;
+        console.log("new max");
     }
     
     MIDI_Workspace.prototype.buttonPress = function(){

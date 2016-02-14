@@ -7,7 +7,7 @@ var MIDI_Editor = new function() {
     var heightSub = 160;
     // minimum width and height
     var minHeight = 200;
-    var minWidth = 760;
+    var minWidth = 660;
     
     var headerHeight = 80;
     
