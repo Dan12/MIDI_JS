@@ -186,13 +186,15 @@ var Editor_Header = new function() {
         this.x = x;
         this.y = y;
         this.text = t;
+        this.midiWorkspace = m;
+        
+        // standard width and height
         this.width = 60;
         this.height = 60;
         this.icon = new Image(this.width,this.height);
+        // image not loaded yet
         this.ready = false;
         this.mouseOver = false;
-        this.pressed = false;
-        this.midiWorkspace = m;
         
         // add listener to icon for load
         // this is what the editor waits for before it intially draws
@@ -231,10 +233,10 @@ var Editor_Header = new function() {
         }
     }
     
-    // if mouse is over button and mouse is down, this button is pressed
+    // if mouse is over button and mouse is down, call button pressed on midi workspace
     Button.prototype.checkMouseDown = function(e){
         if(this.mouseOver)
-            this.pressed = true;
+            this.midiWorkspace.buttonPress(this.text);
     }
     
     // map function to map a value x between in_min and in_max 

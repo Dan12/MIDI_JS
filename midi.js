@@ -284,7 +284,18 @@ var MIDI = new function() {
     // TODO: add functionality
     // if a button is pressed, play, pause, stop, or record midi based on which button
     MIDI_Workspace.prototype.buttonPress = function(b){
-        
+        if(b == "Record"){
+            
+        }
+        else if(b == "Play"){
+            
+        }
+        else if(b == "Pause"){
+            
+        }
+        else if(b == "Stop"){
+            
+        }
     }
     
     // update slider value in midi workspace

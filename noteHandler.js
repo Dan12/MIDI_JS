@@ -126,10 +126,12 @@ var Note_Handler = new function() {
         this.height = h;
     }
     
+    // TODO: add functionality
     NoteHandler.prototype.play = function(bpm, scrubAt){
         
     }
     
+    // TODO: add functionality
     NoteHandler.prototype.pause = function(){
         
     }
