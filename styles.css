@@ -21,3 +21,12 @@ h1{
 .editor_canvas:hover{
     cursor: default;
 }
+
+#sender, #reciever{
+    height: 140px;
+    width: 200px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    border: solid 1px black;
+    display: inline-block;
+}

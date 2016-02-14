@@ -6,10 +6,6 @@ var Note_Handler = new function() {
         return new NoteHandler(editor, x, y, w, h, p, mk, m);
     }
     
-    var getNoteHandler = function(){
-        return NoteHandler;
-    }
-    
     /**
      * NoteHandler-creates and handles all of the notes as well 
      *      as being the parent object for all note activities
@@ -84,6 +80,17 @@ var Note_Handler = new function() {
         var thisObj = this;
         this.editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
         
+        this.recordInterval = null;
+        this.recordStartTime = 0;
+        this.recordBeatStart = 0;
+        this.recordNoteStart = [];
+        this.MSToBeats = 0;
+        this.recordResolution = 8;
+        
+        this.playInterval = null;
+        this.playResolution = 10;
+        this.notesPlaying = [];
+        
         console.log("New Note Handler created");
     }
     
@@ -98,7 +105,7 @@ var Note_Handler = new function() {
         /* when dragging selected notes move them by the change in the offsets
          * change in offset used because absolute note positions are changing
          * make sure multiselect is not active because it adds notes to selected while dragging
-         * make sure that selectedMouseUp is false, meaning that we are dragging and not just scrolling
+         * make sure that selectedMouseUp is false, meaning that user is dragging and not just scrolling
          */
         if(!this.multiSelect.isActive && !this.selectedMouseUp)
             for(var note in this.selected)
@@ -126,16 +133,6 @@ var Note_Handler = new function() {
         this.height = h;
     }
     
-    // TODO: add functionality
-    NoteHandler.prototype.play = function(bpm, scrubAt){
-        
-    }
-    
-    // TODO: add functionality
-    NoteHandler.prototype.pause = function(){
-        
-    }
-    
     // resolution changed, update note pixel lengths and positions
     NoteHandler.prototype.changeResolution = function(r){
         this.resolution = r;
@@ -144,9 +141,7 @@ var Note_Handler = new function() {
             this.notes[note].adjustLength(this.PixelsPerBeat, this.x);
     }
     
-    // binary search for index of note based on the fact that the array should be in order
-    NoteHandler.prototype.findNote = function(array, item) {
- 
+    NoteHandler.prototype.findNote = function(array, item, findInsert){
         var minIndex = 0;
         var maxIndex = array.length - 1;
         var currentIndex;
@@ -163,46 +158,137 @@ var Note_Handler = new function() {
                 maxIndex = currentIndex - 1;
             }
             else {
-                for(var i = minIndex; i <= maxIndex; i++)
-                    if(array[i] == item)
-                        return i;
-                // stops infinite recursion if note is not found
-                minIndex++;
+                if(findInsert)
+                    return currentIndex;
+                else{
+                    for(var i = minIndex; i <= maxIndex; i++)
+                        if(array[i] == item)
+                            return i;
+                    // stops infinite recursion if note is not found
+                    minIndex++;
+                }
             }
         }
-     
-        // this is bad
-        console.log("Didn't find");
-        console.log(array);
-        console.log(item);
-        console.log(currentIndex+","+minIndex+","+maxIndex);
-        alert("Critical Error! Didn't find note");
+        
+        if(!findInsert){
+            // this is bad
+            console.log("Didn't find note");
+            console.log(array);
+            console.log(item);
+            console.log(currentIndex+","+minIndex+","+maxIndex);
+            alert("Critical Error! Didn't find note");
+        }
         return minIndex;
     }
     
-    // binary search for note insertion index so that their beats are in numerical order
-    NoteHandler.prototype.findNoteInsert = function(array, item) {
- 
-        var minIndex = 0;
-        var maxIndex = array.length - 1;
-        var currentIndex;
-        var currentElement;
-     
-        while (minIndex <= maxIndex) {
-            currentIndex = (minIndex + maxIndex) / 2 | 0;
-            currentElement = array[currentIndex];
-     
-            if (currentElement.beat < item.beat) {
-                minIndex = currentIndex + 1;
+    NoteHandler.prototype.startRecording = function(BPM, beatAt){
+        this.MSToBeats = BPM/60000;
+        this.recordStartTime = new Date().getTime();
+        this.recordBeatStart = beatAt;
+        var thisObj = this;
+        this.recordInterval = setInterval(function(){
+            thisObj.beatAt = thisObj.recordBeatStart+thisObj.MSToBeats*(new Date().getTime()-thisObj.recordStartTime);
+            thisObj.midiEditor.redrawAll();
+        },100);
+    }
+    
+    NoteHandler.prototype.stopRecording = function(){
+        clearInterval(this.recordInterval);
+        this.beatAt = this.recordBeatStart;
+        this.recordNoteStart = [];
+        return this.beatAt;
+    }
+    
+    NoteHandler.prototype.recordNoteDown = function(nInd){
+        var noteStarted = false;
+        
+        for(var note in this.recordNoteStart)
+            if(this.recordNoteStart[note].note == nInd)
+                noteStarted = true;
+        
+        if(!noteStarted)
+            this.recordNoteStart.push({"note":nInd,"sTime":new Date().getTime()});
+    }
+    
+    NoteHandler.prototype.recordNoteUp = function(nInd){
+        var curTime = new Date().getTime();
+        for(var n = 0; n < this.recordNoteStart.length; n++)
+            if(this.recordNoteStart[n].note == nInd){
+                // beat accuracy up to 1/32 of a beat
+                this.addNewNote(Note_Space.createNote(nInd,Math.round((this.recordBeatStart+(this.recordNoteStart[n].sTime-this.recordStartTime)*this.MSToBeats)*this.recordResolution)/this.recordResolution,Math.max(Math.round((curTime-this.recordNoteStart[n].sTime)*this.MSToBeats*this.recordResolution)/this.recordResolution, 1/this.recordResolution), this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y))
+                this.recordNoteStart.splice(n,1);
+                n--;
+                break;
             }
-            else if (currentElement.beat > item.beat) {
-                maxIndex = currentIndex - 1;
+    }
+    
+    NoteHandler.prototype.startPlaying = function(BPM, beatAt){
+        this.MSToBeats = BPM/60000;
+        var thisObj = this;
+        var redrawCounter = 0;
+        var startTime = new Date().getTime();
+        var prevTime = new Date().getTime();
+        var startBeat = beatAt;
+        var playIndex = -1;
+        for(var note in this.notes)
+            if(this.notes[note].beat >= startBeat){
+                playIndex = note;
+                break;
             }
-            else {
-                return currentIndex;
+            
+        if(playIndex == -1)
+            playIndex = this.notes.length;
+        
+        this.playInterval = setInterval(function(){
+            if(thisObj.notesPlaying.length == 0 && playIndex >= thisObj.notes.length)
+                clearInterval(thisObj.playInterval);
+            
+            var curTime = new Date().getTime();
+            thisObj.beatAt = startBeat+thisObj.MSToBeats*(new Date().getTime()-startTime);
+            console.log(thisObj.beatAt);
+            while(playIndex < thisObj.notes.length){
+                if(thisObj.notes[playIndex].beat <= thisObj.beatAt){
+                    thisObj.notesPlaying.push(playIndex);
+                    thisObj.midiEditor.playKeyDown(thisObj.notes[playIndex].note);
+                    
+                    playIndex++;
+                }
+                else
+                    break;
+                if(playIndex >= thisObj.notes.length || thisObj.notes[playIndex].beat > thisObj.beatAt)
+                    break;
             }
+            
+            for(var n = 0; n < thisObj.notesPlaying.length; n++)
+                if(thisObj.notes[thisObj.notesPlaying[n]].beat+thisObj.notes[thisObj.notesPlaying[n]].length <= thisObj.beatAt){
+                    thisObj.midiEditor.playKeyUp(thisObj.notes[thisObj.notesPlaying[n]].note);
+                    thisObj.notesPlaying.splice(n,1);
+                    n--;
+                }
+            
+            redrawCounter+=curTime-prevTime;
+            prevTime = curTime;
+            if(redrawCounter > 100){
+                redrawCounter-=100;
+                thisObj.midiEditor.redrawAll();
+            }
+        },this.playResolution);
+    }
+    
+    NoteHandler.prototype.stopPlaying = function(){
+        clearInterval(this.playInterval);
+        for(var note in this.notesPlaying)
+            this.midiEditor.playKeyUp(this.notes[this.notesPlaying[note]].note);
+        this.notesPlaying = [];
+    }
+    
+    NoteHandler.prototype.addNewNote = function(note){
+        // this adds it at an index where, when added, the notes array will still be in order by beats
+        this.notes.splice(this.findNote(this.notes, note, true), 0, note);
+        this.visibleNotes.push(note);
+        if(note.px+note.pw > this.farthestNote){
+            this.farthestNote = note.px+note.pw;
+            this.midiEditor.setMaxWidth(this.farthestNote*this.resolution);
         }
-     
-        return minIndex;
     }
 }

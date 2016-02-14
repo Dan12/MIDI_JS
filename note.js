@@ -6,6 +6,7 @@ var Note_Space = new function() {
         return new Note(note,beat,length,h,ppb,xs,ys);
     }
     
+    // TODO: make sure that note is created in bounds
     /**
      * A note
      * note-index of key code
@@ -87,7 +88,7 @@ var Note_Space = new function() {
         this.px = this.beat*ppb+xs;
     }
     
-    // move the note because we are dragging it
+    // move the note because it is being dragged
     Note.prototype.moveNote = function(dx,dy){
         this.deltaX+=dx;
         this.deltaY+=dy;

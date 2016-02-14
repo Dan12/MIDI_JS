@@ -85,6 +85,11 @@ var MIDI = new function() {
         var thisObj = this;
         editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
         
+        this.isRecording = false;
+        this.isPlaying = false;
+        
+        this.header = Editor_Header.init(editor, this.width, this.horizontalOffset, this);
+        
         console.log("New MIDI Workspace created");
     }
     
@@ -174,6 +179,7 @@ var MIDI = new function() {
         this.height = height-this.heightOffset;
         this.canvasScroll(0,0);
         this.noteHandler.windowResize(this.width-keySize, this.height-scrubBarHeight-scrollBarWidth);
+        this.header.windowResize();
     }
     
     // draw all elements
@@ -274,6 +280,9 @@ var MIDI = new function() {
         ctx.lineWidth = borderWidth;
         ctx.strokeStyle = "rgb(170,170,170)";
         ctx.strokeRect(borderWidth/2,this.heightOffset+borderWidth/2,this.width-borderWidth,this.height-borderWidth);
+        
+        // draw header
+        this.header.draw(ctx);
     }
     
     // set max width of workspace in pixels
@@ -284,17 +293,45 @@ var MIDI = new function() {
     // TODO: add functionality
     // if a button is pressed, play, pause, stop, or record midi based on which button
     MIDI_Workspace.prototype.buttonPress = function(b){
-        if(b == "Record"){
-            
+        if(b.text == "Record"){
+            if(!this.isPlaying){
+                this.isRecording = !this.isRecording;
+                this.header.resetButtons();
+                b.isDown = this.isRecording;
+                if(this.isRecording)
+                    this.noteHandler.startRecording(this.BPM, this.scrubBarAt);
+                else
+                    this.scrubBarAt = this.noteHandler.stopRecording();
+            }
         }
-        else if(b == "Play"){
-            
+        else if(b.text == "Play"){
+            if(!this.isRecording && !this.isPlaying){
+                this.isPlaying = true;
+                this.header.resetButtons();
+                this.noteHandler.startPlaying(this.BPM, this.scrubBarAt);
+                b.isDown = true;
+            }
         }
-        else if(b == "Pause"){
-            
+        else if(b.text == "Pause"){
+            if(this.isPlaying){
+                this.isPlaying = false;
+                this.header.resetButtons();
+                this.noteHandler.stopPlaying();
+                b.isDown = true;
+            }
         }
-        else if(b == "Stop"){
-            
+        else if(b.text == "Stop"){
+            if(this.isRecording)
+                this.scrubBarAt = this.noteHandler.stopRecording();
+            else
+                this.scrubBarAt = 0;
+            if(this.isPlaying)
+                this.noteHandler.stopPlaying();
+            this.isPlaying = false;
+            this.isRecording = false;
+            this.noteHandler.beatAt = this.scrubBarAt;
+            this.header.resetButtons();
+            b.isDown = true;
         }
     }
     
@@ -311,8 +348,38 @@ var MIDI = new function() {
             this.BPM = v;
     }
     
-    // midi workspace is always ready
+    MIDI_Workspace.prototype.redrawAll = function(){
+        if(this.isPlaying || this.isRecording)
+            this.scrubBarAt = this.noteHandler.beatAt;
+        this.drawClass.draw();
+    }
+    
+    // is header ready
     MIDI_Workspace.prototype.isReady = function(){
-        return true;
+        return this.header.ready();
+    }
+    
+    MIDI_Workspace.prototype.recordKeyDown = function(kc){
+        if(this.isRecording){
+            var noteInd = keyPairs.indexOf(kc);
+            if(noteInd != -1)
+                this.noteHandler.recordNoteDown(noteInd);
+        }
+    }
+    
+    MIDI_Workspace.prototype.recordKeyUp = function(kc){
+        if(this.isRecording){
+            var noteInd = keyPairs.indexOf(kc);
+            if(noteInd != -1)
+                this.noteHandler.recordNoteUp(noteInd);
+        }
+    }
+    
+    MIDI_Workspace.prototype.playKeyDown = function(noteInd){
+        this.drawClass.midiKeyDown(keyPairs[noteInd]);
+    }
+    
+    MIDI_Workspace.prototype.playKeyUp = function(noteInd){
+        this.drawClass.midiKeyUp(keyPairs[noteInd]);
     }
 }

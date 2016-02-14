@@ -5,9 +5,9 @@ var Editor_Header = new function() {
     var borderWidth = 4;
     
     // items start x pos
-    var itemLeftPadding = 40;
+    var itemLeftPadding = 30;
     // spacing between elements
-    var buttonMargin = 120;
+    var buttonMargin = 90;
     // height and width of slider
     var sliderSize = 30;
     
@@ -31,12 +31,15 @@ var Editor_Header = new function() {
         
         // create all items
         this.items = [];
-        this.items.push(new Button(itemLeftPadding,10,"Play","icons/play.png",m));
-        this.items.push(new Button(itemLeftPadding+buttonMargin,10,"Pause","icons/pause.png",m));
-        this.items.push(new Button(itemLeftPadding+buttonMargin*2,10,"Stop","icons/stop.png",m));
-        this.items.push(new Button(itemLeftPadding+buttonMargin*3,10,"Record","icons/record.png",m));
-        this.items.push(new Slider(itemLeftPadding+buttonMargin*4,30,3,9,6,"Zoom",m));
-        this.items.push(new Slider(itemLeftPadding+buttonMargin*5,30,60,180,140,"BPM",m));
+        this.items.push(new Button(itemLeftPadding,10,"Play","newIcons/play.png",m));
+        this.items.push(new Button(itemLeftPadding+buttonMargin,10,"Pause","newIcons/pause.png",m));
+        this.items.push(new Button(itemLeftPadding+buttonMargin*2,10,"Stop","newIcons/stop.png",m));
+        this.items.push(new Button(itemLeftPadding+buttonMargin*3,10,"Record","newIcons/record.png",m));
+        this.items.push(new Button(itemLeftPadding+buttonMargin*4,10,"New","newIcons/record.png",m));
+        this.items.push(new Button(itemLeftPadding+buttonMargin*5,10,"Save","newIcons/record.png",m));
+        this.items.push(new Button(itemLeftPadding+buttonMargin*6,10,"Load","newIcons/record.png",m));
+        this.items.push(new Slider(itemLeftPadding+buttonMargin*7,30,3,9,6,"Zoom",m));
+        this.items.push(new Slider(itemLeftPadding+buttonMargin*8,30,40,200,140,"BPM",m));
         //this.items.push(new Slider(itemLeftPadding+buttonMargin*6,30,10,150,100,"Playback Speed",m));
         
         // add listener for input events and use it to call a local object method
@@ -82,6 +85,12 @@ var Editor_Header = new function() {
             this.items[item].draw(ctx);
     }
     
+    Header.prototype.resetButtons = function(){
+        for(var item in this.items)
+            if(this.items[item] instanceof Button)
+                this.items[item].isDown = false;
+    }
+    
     // check if all items are ready
     // mainly, check if button icons loaded
     Header.prototype.isReady = function(){
@@ -105,7 +114,7 @@ var Editor_Header = new function() {
     var Slider = function(x,y,min,max,d,t,m){
         this.x = x;
         this.y = y;
-        this.width = 80;
+        this.width = 60;
         this.height = 20;
         this.min = min;
         this.max = max;
@@ -203,6 +212,8 @@ var Editor_Header = new function() {
           thisObj.ready = true;
         }, false);
         this.icon.src = i;
+        
+        this.isDown = false;
     }
     
     // has the icon image loaded
@@ -212,6 +223,13 @@ var Editor_Header = new function() {
     
     Button.prototype.draw = function(ctx){
         // draw icon
+        if(this.isDown)
+            ctx.fillStyle = "rgb(100,140,200)";
+        else
+            ctx.fillStyle = "rgb(230,230,230)";
+        ctx.beginPath();
+        ctx.ellipse(this.x+this.width/2, this.y+this.height/2, this.width/2, this.height/2, 0, 0, 2*Math.PI);
+        ctx.fill();
         ctx.drawImage(this.icon,this.x,this.y,this.width,this.height);
         
         // if mouse is over button, show name and value
@@ -236,7 +254,11 @@ var Editor_Header = new function() {
     // if mouse is over button and mouse is down, call button pressed on midi workspace
     Button.prototype.checkMouseDown = function(e){
         if(this.mouseOver)
-            this.midiWorkspace.buttonPress(this.text);
+            this.midiWorkspace.buttonPress(this);
+    }
+    
+    Button.prototype.changeState = function(s){
+        this.state = s;
     }
     
     // map function to map a value x between in_min and in_max 

@@ -3,26 +3,31 @@
 var MIDI_Editor = new function() {
     
     // editor height and width subtract from window dims
-    var widthSub = 60;
+    var widthSub = 100;
     var heightSub = 160;
     
     // minimum width and height
     var minHeight = 200;
-    var minWidth = 820;
+    var minWidth = 900;
     
     // height of header
     var headerHeight = 80;
     
     // init function for namespace
     // returns a new editor
-    this.init = function(append_to){
-        return new Editor(append_to);
+    this.init = function(append_to, player){
+        return new Editor(append_to, player);
     }
     
-    // editor constructor
-    // appends a new editor canvas to append_to and resizes it
-    // initalize object variables
-    var Editor = function(append_to){
+    /**
+     * editor constructor
+     * append_to-html element to append new editor canvas to
+     * player-player object linked to editor, must have methods called midiKeyUp, midiKeyDown, and linkEditor
+     *      and invokes editor methods recordKeyDown and recordKeyUp
+     */
+    var Editor = function(append_to, player){
+        
+        this.player = player;
         
         // create editor canvas
         $(append_to).append('<div class="editor_container"><canvas class="editor_canvas">Your browser does not support the HTML5 canvas tag.</canvas></div>');
@@ -30,19 +35,14 @@ var MIDI_Editor = new function() {
         this.canvas = editors[editors.length-1];
         this.context = this.canvas.getContext("2d");
         
-        // create empty items array
-        this.items = [];
-        
         // initialize Input Events object
         Input_Events.init(this.canvas);
         
         // set the dimensions
         this.setDimensions();
         
-        // initialize a new midi workspace and a header
-        var midiWorkspace = MIDI.init(this.canvas, this.width, this.height, headerHeight, this);
-        this.items.push(midiWorkspace);
-        this.items.push(Editor_Header.init(this.canvas, this.width, headerHeight, midiWorkspace));
+        // initialize a new midi workspace
+        this.midiWorkspace = MIDI.init(this.canvas, this.width, this.height, headerHeight, this);
         
         // setup window resize function
         var thisObj = this;
@@ -60,6 +60,9 @@ var MIDI_Editor = new function() {
              clearInterval(readyInterval);
             }
         },300);
+
+        // send instance of this editor to player to link them together
+        this.player.linkEditor(this);
         
         console.log("New Editor created");
     }
@@ -75,27 +78,42 @@ var MIDI_Editor = new function() {
         this.canvas.width = this.width;
         this.canvas.height = this.height;
         
-        for (var item in this.items)
-            this.items[item].windowResize(this.width, this.height);
+        if(this.midiWorkspace)
+            this.midiWorkspace.windowResize(this.width, this.height);
         this.draw();
     }
     
-    // clears canvas and calls draw on all items
+    // clears canvas and draw midiworkspace
     Editor.prototype.draw = function(){
         var t0 = performance.now();
         this.context.clearRect(0,0,this.width, this.height);
         this.context.font = "16px arial";
-        for (var item in this.items)
-            this.items[item].draw(this.context);
+        if(this.midiWorkspace)
+            this.midiWorkspace.draw(this.context);
         var t1 = performance.now();
         //console.log("Call took " + (t1 - t0) + " milliseconds.")
     }
     
     // is the editor ready (right now ask have all images loaded)
     Editor.prototype.isReady = function(){
-        for (var item in this.items)
-            if(!this.items[item].isReady())
-                return false;
-        return true;
+        return this.midiWorkspace.ready();
+    }
+    
+    // pass along
+    Editor.prototype.recordKeyDown = function(kc){
+        this.midiWorkspace.recordKeyDown(kc);
+    }
+    
+    Editor.prototype.recordKeyUp = function(kc){
+        this.midiWorkspace.recordKeyUp(kc);
+    }
+    
+    // pass along
+    Editor.prototype.midiKeyDown = function(kc){
+        this.player.midiKeyDown(kc);
+    }
+    
+    Editor.prototype.midiKeyUp = function(kc){
+        this.player.midiKeyUp(kc);
     }
 }

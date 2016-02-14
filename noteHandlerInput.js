@@ -15,24 +15,27 @@ var Set_Note_Handler_Input = new function() {
                         // go through visible notes in reverse order because the ones on top were likely added later
                         for(var note = this.visibleNotes.length-1; note >= 0; note--)
                             /* if the mouse is down on a visible note, add that note to the selected array
-                             * set the note to selected, set exit to true so that we don't create a new note
-                             * set selectedMouseUp to false to indicate that we are dragging
+                             * set the note to selected, set exit to true so that a new note isn't created
+                             * set selectedMouseUp to false to indicate that user is dragging
                              */
                             if(this.visibleNotes[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
                                 this.visibleNotes[note].selected = true;
                                 this.selected.push(this.visibleNotes[note]);
                                 this.selectedMouseUp = false;
+                                // if note was just selected, dragging it no matter where because 
+                                // the user doesn't know what part they are clicking on
+                                this.resizing = 0;
                                 exit = true;
                                 break;
                             }
                     }
                     // the selected array is not empty
                     else{
-                        // if we are dragging what we have selected
+                        // if what is selected is being dragged
                         if(!this.selectedMouseUp){
-                            // if we haven't decided if we are dragging or resizing
+                            // if user hasn't decided if they are dragging or not
                             if(this.resizing == -1)
-                                // check if we are resizing
+                                // check if user wants to resize
                                 for(var note in this.selected){
                                     if(this.selected[note].overLeftEdge(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
                                         this.resizing = 1;
@@ -44,7 +47,7 @@ var Set_Note_Handler_Input = new function() {
                                     }
                                 }
                                 
-                            // if we are not resizing, we are dragging
+                            // if not resizing, that means user is dragging
                             if(this.resizing == -1)
                                 this.resizing = 0;
                             
@@ -58,13 +61,13 @@ var Set_Note_Handler_Input = new function() {
                                     this.selected[note].moveNote(e.detail.deltaX, e.detail.deltaY);
                             }
                             
-                            // we have modified the notes and must remember to make them snap into place when we are done  
+                            // notes have been modified, set reminder to make them snap into place when user is done modifying notes
                             this.selectedSet = false;
                             
                             // prevent the creation of a new note
                             exit = true;
                         }
-                        // the mouse was just pressed down, make sure we are still selecting an object in the selected array
+                        // the mouse was just pressed down, make sure user is still selecting an object in the selected array
                         else{
                             for(var note in this.selected)
                                 if(this.selected[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
@@ -107,7 +110,7 @@ var Set_Note_Handler_Input = new function() {
                     exit = true;
                 }
                 
-                // if nothing is selected, create a potential new note, only confirmed if we don't drag (indicating a drag select)
+                // if nothing is selected, create a potential new note, only confirmed if user doesn't drag (indicating a drag select)
                 if(!exit && this.selectedMouseUp && e.detail.mouseX > this.x && e.detail.mouseX < this.x+this.width && e.detail.mouseY > this.y && e.detail.mouseY < this.y+this.height)
                     // get mouse pixel position in terms of input handler window, convert to notes and beats, pass a few other parameters to help set up note
                     this.possibleNewNote = Note_Space.createNote(Math.floor((e.detail.mouseY-this.y-this.verticalOffset)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
@@ -120,24 +123,19 @@ var Set_Note_Handler_Input = new function() {
                 // if the possible new note is still around, create it, add it to the arrays
                 // and check if it's the new farthest note
                 if(this.possibleNewNote != null){
-                    this.notes.splice(this.findNoteInsert(this.notes, this.possibleNewNote), 0, this.possibleNewNote);
-                    this.visibleNotes.push(this.possibleNewNote);
-                    if(this.possibleNewNote.px+this.possibleNewNote.pw > this.farthestNote){
-                        this.farthestNote = this.possibleNewNote.px+this.possibleNewNote.pw;
-                        this.midiEditor.setMaxWidth(this.farthestNote*this.resolution);
-                    }
+                    this.addNewNote(this.possibleNewNote);
                     this.possibleNewNote = null;
                 }
                 
-                // if we click on empty space next time, empty selected array
+                // if user clicks on empty space next time, this flag will empty the selected array
                 this.selectedMouseUp = true;
                 // hide dragging selector highlighter
                 this.multiSelect.isActive = false;
                 // reset selected action
                 this.resizing = -1;
                 
-                // check if we should change the cursor to let the user know that they can resize the selected notes
-                // only makes sense if we have something selected
+                // check if cursor should change to let the user know that they can resize the selected notes
+                // only makes sense if something is selected
                 if(this.selected.length > 0){
                     var changeCursor = false;
                     for(var i = this.selected.length-1; i >= 0; i--)
@@ -174,7 +172,7 @@ var Set_Note_Handler_Input = new function() {
             // if mouse dragged, remove possible new note
             if(e.detail.mouseDrag){
                 this.possibleNewNote = null;
-                // if we do not have something selected, start a new dragging selector if one is not yet created
+                // if nothing is selected, start a new dragging selector if one is not yet created
                 if(this.selected.length == 0 && !this.multiSelect.isActive && e.detail.mouseY > this.y){
                     this.multiSelect.startNew(e.detail.mouseX, e.detail.mouseY, this.horizontalOffset, this.verticalOffset);
                 }
@@ -187,13 +185,13 @@ var Set_Note_Handler_Input = new function() {
                     // remove the selected notes from the notes array because they could have changed position
                     // and the notes array needs to remain ordered
                     for(var note in this.selected)
-                        this.notes.splice(this.findNote(this.notes,this.selected[note]),1);
+                        this.notes.splice(this.findNote(this.notes, this.selected[note], false),1);
                     
                     // TODO: check for new max width
                     for(var note in this.selected){
                         this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat, this.maxKeys);
                         // reinsert selected notes into notes array in their correct place
-                        this.notes.splice(this.findNoteInsert(this.notes,this.selected[note]),0,this.selected[note]);
+                        this.notes.splice(this.findNote(this.notes, this.selected[note], true), 0, this.selected[note]);
                     }
                     this.selectedSet = true;
                 }
