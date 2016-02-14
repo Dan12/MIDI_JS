@@ -26,7 +26,7 @@ var MIDI_Editor = new function() {
      *      and invokes editor methods recordKeyDown and recordKeyUp
      */
     var Editor = function(append_to, player){
-        
+        // store reference to player object
         this.player = player;
         
         // create editor canvas
@@ -61,7 +61,7 @@ var MIDI_Editor = new function() {
             }
         },300);
 
-        // send instance of this editor to player to link them together
+        // send reference of this editor to player to link them together
         this.player.linkEditor(this);
         
         console.log("New Editor created");
@@ -99,20 +99,22 @@ var MIDI_Editor = new function() {
         return this.midiWorkspace.ready();
     }
     
-    // pass along
+    // called from player, send key code down to midi workspace
     Editor.prototype.recordKeyDown = function(kc){
         this.midiWorkspace.recordKeyDown(kc);
     }
     
+    // called from player, send key code down to midi workspace
     Editor.prototype.recordKeyUp = function(kc){
         this.midiWorkspace.recordKeyUp(kc);
     }
     
-    // pass along
+    // called from midi workspace, send key code up to player
     Editor.prototype.midiKeyDown = function(kc){
         this.player.midiKeyDown(kc);
     }
     
+    // called from midi workspace, send key code up to player
     Editor.prototype.midiKeyUp = function(kc){
         this.player.midiKeyUp(kc);
     }

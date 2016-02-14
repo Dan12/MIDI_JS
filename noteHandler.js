@@ -141,6 +141,10 @@ var Note_Handler = new function() {
             this.notes[note].adjustLength(this.PixelsPerBeat, this.x);
     }
     
+    /* binary search to either find the index of the item in the array if findInsert is false
+     * or finds the aporpriate insert position for the item in the array to keep the array
+     * ordered by beat
+     */
     NoteHandler.prototype.findNote = function(array, item, findInsert){
         var minIndex = 0;
         var maxIndex = array.length - 1;
@@ -181,6 +185,10 @@ var Note_Handler = new function() {
         return minIndex;
     }
     
+    // TODO: when recording or playing, check if beatAt is off the screen and scroll to bring it onto the screen
+    
+    // start recording with given BPM and starting from beatAt
+    // call redraw every 100ms
     NoteHandler.prototype.startRecording = function(BPM, beatAt){
         this.MSToBeats = BPM/60000;
         this.recordStartTime = new Date().getTime();
@@ -192,6 +200,7 @@ var Note_Handler = new function() {
         },100);
     }
     
+    // stop recording interval, clear any started notes, and reset beatAt
     NoteHandler.prototype.stopRecording = function(){
         clearInterval(this.recordInterval);
         this.beatAt = this.recordBeatStart;
@@ -199,6 +208,8 @@ var Note_Handler = new function() {
         return this.beatAt;
     }
     
+    // check if note has already started to be recorded
+    // if not, create a new temporary note
     NoteHandler.prototype.recordNoteDown = function(nInd){
         var noteStarted = false;
         
@@ -210,6 +221,8 @@ var Note_Handler = new function() {
             this.recordNoteStart.push({"note":nInd,"sTime":new Date().getTime()});
     }
     
+    // find the note, create a new note and add it to the editor,
+    // then remove the note from the recordNoteStart array
     NoteHandler.prototype.recordNoteUp = function(nInd){
         var curTime = new Date().getTime();
         for(var n = 0; n < this.recordNoteStart.length; n++)
@@ -222,6 +235,7 @@ var Note_Handler = new function() {
             }
     }
     
+    // start playing interval
     NoteHandler.prototype.startPlaying = function(BPM, beatAt){
         this.MSToBeats = BPM/60000;
         var thisObj = this;
@@ -229,6 +243,9 @@ var Note_Handler = new function() {
         var startTime = new Date().getTime();
         var prevTime = new Date().getTime();
         var startBeat = beatAt;
+        
+        // find the start index of the player
+        // works because notes are sorted by beat
         var playIndex = -1;
         for(var note in this.notes)
             if(this.notes[note].beat >= startBeat){
@@ -236,36 +253,54 @@ var Note_Handler = new function() {
                 break;
             }
             
-        if(playIndex == -1)
-            playIndex = this.notes.length;
+        // if the beat is after any current note starts
+        // start from the begining
+        if(playIndex == -1){
+            playIndex = 0;
+            startBeat = 0;
+        }
         
         this.playInterval = setInterval(function(){
+            // if no key needs to be set to up and all of the notes have started to play
+            // beatAt is at the end of the song so stop playing
             if(thisObj.notesPlaying.length == 0 && playIndex >= thisObj.notes.length)
                 clearInterval(thisObj.playInterval);
             
+            // get the current time to be as accurate as possible
             var curTime = new Date().getTime();
+            // set beatAt based on difference between start and end time
             thisObj.beatAt = startBeat+thisObj.MSToBeats*(new Date().getTime()-startTime);
-            console.log(thisObj.beatAt);
+            
+            // increment through the notes array until the next note is after the position of the player
             while(playIndex < thisObj.notes.length){
+                // only play note if player bar is on or past the note
                 if(thisObj.notes[playIndex].beat <= thisObj.beatAt){
+                    // keep track of notes that have started to play
                     thisObj.notesPlaying.push(playIndex);
                     thisObj.midiEditor.playKeyDown(thisObj.notes[playIndex].note);
                     
                     playIndex++;
                 }
+                // if the next note hasn't been played, break and wait for the next cycle
                 else
                     break;
-                if(playIndex >= thisObj.notes.length || thisObj.notes[playIndex].beat > thisObj.beatAt)
-                    break;
+                    
+                // // probably don't need
+                // if(playIndex >= thisObj.notes.length || thisObj.notes[playIndex].beat > thisObj.beatAt)
+                //     break;
             }
             
+            // go through all of the notes that have started to play and check if any of them 
+            // have stopped playing (their beat+length is behind or at the player bar)
             for(var n = 0; n < thisObj.notesPlaying.length; n++)
+                // if the note has stopped playing, send a key up message to player and remove note from playing notes
                 if(thisObj.notes[thisObj.notesPlaying[n]].beat+thisObj.notes[thisObj.notesPlaying[n]].length <= thisObj.beatAt){
                     thisObj.midiEditor.playKeyUp(thisObj.notes[thisObj.notesPlaying[n]].note);
                     thisObj.notesPlaying.splice(n,1);
                     n--;
                 }
             
+            // use this to redraw about every 100ms
             redrawCounter+=curTime-prevTime;
             prevTime = curTime;
             if(redrawCounter > 100){
@@ -275,6 +310,7 @@ var Note_Handler = new function() {
         },this.playResolution);
     }
     
+    // stop playing interval and clear all of the currently playing notes
     NoteHandler.prototype.stopPlaying = function(){
         clearInterval(this.playInterval);
         for(var note in this.notesPlaying)
@@ -282,6 +318,8 @@ var Note_Handler = new function() {
         this.notesPlaying = [];
     }
     
+    // create a new note and add it to visibleNotes and notes array
+    // also check if it is a new farthest note
     NoteHandler.prototype.addNewNote = function(note){
         // this adds it at an index where, when added, the notes array will still be in order by beats
         this.notes.splice(this.findNote(this.notes, note, true), 0, note);

@@ -1,10 +1,22 @@
 // Setup namespace
 var Test_Player = new function() {
     
+    // return a new player
     this.init = function(){
         return new Player();
     }
     
+    /**
+     * A simple player that can link to the midi editor
+     * it needs to contain the following methods:
+     *      linkEditor
+     *      midiKeyUp
+     *      midiKeyDown
+     * 
+     * To send keys to the editor, use the following methods
+     *      this.editor.recordKeyDown(keyCode)
+     *      this.editor.recordKeyUp(keyCode)
+     */
     var Player = function(){
         $("body").append('<div id="reciever"></div>');
         $("body").append('<div id="sender"></div>');

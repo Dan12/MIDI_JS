@@ -121,7 +121,6 @@ var Set_Note_Handler_Input = new function() {
             // if the mouse is not down
             else{
                 // if the possible new note is still around, create it, add it to the arrays
-                // and check if it's the new farthest note
                 if(this.possibleNewNote != null){
                     this.addNewNote(this.possibleNewNote);
                     this.possibleNewNote = null;
@@ -167,7 +166,7 @@ var Set_Note_Handler_Input = new function() {
                 }
                 this.selected = [];
             }
-            // TODO: add functionality for space bar to play and pause
+            // TODO: maybe add functionality for space bar to play and pause
             
             // if mouse dragged, remove possible new note
             if(e.detail.mouseDrag){

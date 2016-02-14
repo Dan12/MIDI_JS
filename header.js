@@ -39,8 +39,8 @@ var Editor_Header = new function() {
         this.items.push(new Button(itemLeftPadding+buttonMargin*5,10,"Save","newIcons/record.png",m));
         this.items.push(new Button(itemLeftPadding+buttonMargin*6,10,"Load","newIcons/record.png",m));
         this.items.push(new Slider(itemLeftPadding+buttonMargin*7,30,3,9,6,"Zoom",m));
+        // doubles as playback speed
         this.items.push(new Slider(itemLeftPadding+buttonMargin*8,30,40,200,140,"BPM",m));
-        //this.items.push(new Slider(itemLeftPadding+buttonMargin*6,30,10,150,100,"Playback Speed",m));
         
         // add listener for input events and use it to call a local object method
         var thisObj = this;
@@ -85,6 +85,7 @@ var Editor_Header = new function() {
             this.items[item].draw(ctx);
     }
     
+    // called from midi workspace, reset background of all buttons
     Header.prototype.resetButtons = function(){
         for(var item in this.items)
             if(this.items[item] instanceof Button)
@@ -213,6 +214,7 @@ var Editor_Header = new function() {
         }, false);
         this.icon.src = i;
         
+        // is the button down, recolor to give user feedback
         this.isDown = false;
     }
     
@@ -222,7 +224,7 @@ var Editor_Header = new function() {
     }
     
     Button.prototype.draw = function(ctx){
-        // draw icon
+        // draw background color
         if(this.isDown)
             ctx.fillStyle = "rgb(100,140,200)";
         else
@@ -230,6 +232,8 @@ var Editor_Header = new function() {
         ctx.beginPath();
         ctx.ellipse(this.x+this.width/2, this.y+this.height/2, this.width/2, this.height/2, 0, 0, 2*Math.PI);
         ctx.fill();
+        
+        // draw icon
         ctx.drawImage(this.icon,this.x,this.y,this.width,this.height);
         
         // if mouse is over button, show name and value
@@ -245,10 +249,8 @@ var Editor_Header = new function() {
     Button.prototype.checkMouseOver = function(mx,my){
         if(mx > this.x && mx < this.x+this.width && my > this.y && my < this.y+this.height)
             this.mouseOver = true;
-        else{
+        else
             this.mouseOver = false;
-            this.mouseDown = false;
-        }
     }
     
     // if mouse is over button and mouse is down, call button pressed on midi workspace
@@ -257,6 +259,7 @@ var Editor_Header = new function() {
             this.midiWorkspace.buttonPress(this);
     }
     
+    // change the state of the button, true-down, false-up
     Button.prototype.changeState = function(s){
         this.state = s;
     }

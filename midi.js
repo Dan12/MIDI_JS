@@ -85,9 +85,11 @@ var MIDI = new function() {
         var thisObj = this;
         editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
         
+        // recording and playing state of editor
         this.isRecording = false;
         this.isPlaying = false;
         
+        // add a header to this workspace to get button presses and slider values
         this.header = Editor_Header.init(editor, this.width, this.horizontalOffset, this);
         
         console.log("New MIDI Workspace created");
@@ -290,8 +292,8 @@ var MIDI = new function() {
         this.maxWidth = m+this.width;
     }
     
-    // TODO: add functionality
-    // if a button is pressed, play, pause, stop, or record midi based on which button
+    // if a button is pressed,
+    // play, pause, stop, or record midi based on which button
     MIDI_Workspace.prototype.buttonPress = function(b){
         if(b.text == "Record"){
             if(!this.isPlaying){
@@ -348,6 +350,7 @@ var MIDI = new function() {
             this.BPM = v;
     }
     
+    // redraw call, usually from note handler when playing or recording
     MIDI_Workspace.prototype.redrawAll = function(){
         if(this.isPlaying || this.isRecording)
             this.scrubBarAt = this.noteHandler.beatAt;
@@ -359,6 +362,7 @@ var MIDI = new function() {
         return this.header.ready();
     }
     
+    // called from editor, from player, start a new recorded note in notehandler
     MIDI_Workspace.prototype.recordKeyDown = function(kc){
         if(this.isRecording){
             var noteInd = keyPairs.indexOf(kc);
@@ -367,6 +371,7 @@ var MIDI = new function() {
         }
     }
     
+    // called from editor, from player, end an existing recorded note in notehandler
     MIDI_Workspace.prototype.recordKeyUp = function(kc){
         if(this.isRecording){
             var noteInd = keyPairs.indexOf(kc);
@@ -375,10 +380,12 @@ var MIDI = new function() {
         }
     }
     
+    // called from note handler, pass keycode of note to editor, which will go to the player
     MIDI_Workspace.prototype.playKeyDown = function(noteInd){
         this.drawClass.midiKeyDown(keyPairs[noteInd]);
     }
     
+    // called from note handler, pass keycode of note to editor, which will go to the player
     MIDI_Workspace.prototype.playKeyUp = function(noteInd){
         this.drawClass.midiKeyUp(keyPairs[noteInd]);
     }
