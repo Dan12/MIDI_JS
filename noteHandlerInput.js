@@ -167,6 +167,7 @@ var Set_Note_Handler_Input = new function() {
                 this.selected = [];
             }
             // TODO: maybe add functionality for space bar to play and pause
+            // TODO: add functionality for copy and paste
             
             // if mouse dragged, remove possible new note
             if(e.detail.mouseDrag){

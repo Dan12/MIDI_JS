@@ -6,4 +6,3 @@ $(document).ready(function(){
 });
 
 // TODO: add global color palette
-// TODO: script to compile all js files into one
