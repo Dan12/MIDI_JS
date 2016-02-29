@@ -99,25 +99,8 @@ var Keyboard_Space = new function(){
         var thisObj = this;
         $(document).keydown(function(e){
             //console.log(e.keyCode);
-            // up
-            if(e.keyCode == 39){
-                currentSoundPack = 3;
-                thisObj.switchSoundPack();
-            }
-            // left
-            else if(e.keyCode == 37){
-                currentSoundPack = 0;
-                thisObj.switchSoundPack();
-            }
-            // down
-            else if(e.keyCode == 38){
-                currentSoundPack = 1;
-                thisObj.switchSoundPack();
-            }
-            // right
-            else if(e.keyCode == 40){
-                currentSoundPack = 2;
-                thisObj.switchSoundPack();
+            if(thisObj.switchSoundPackCheck(e.keyCode)){
+                // do nothing
             }
             else{
                 if(!e.ctrlKey){
@@ -141,6 +124,33 @@ var Keyboard_Space = new function(){
             if(currentSounds[currentSoundPack][keyInd] != null)
                 thisObj.releaseKey(e.keyCode);
         });
+    }
+    
+    Keyboard.prototype.switchSoundPackCheck = function(kc){
+        // up
+        if(kc == 39){
+            currentSoundPack = 3;
+            this.switchSoundPack();
+            return true;
+        }
+        // left
+        else if(kc == 37){
+            currentSoundPack = 0;
+            this.switchSoundPack();
+            return true;
+        }
+        // down
+        else if(kc == 38){
+            currentSoundPack = 1;
+            this.switchSoundPack();
+            return true;
+        }
+        // right
+        else if(kc == 40){
+            currentSoundPack = 2;
+            this.switchSoundPack();
+            return true;
+        }
     }
     
     // setup touchscreen, kind of works
@@ -178,15 +188,22 @@ var Keyboard_Space = new function(){
     }
     
     Keyboard.prototype.midiKeyUp = function(kc){
-        var kcInd = keyPairs.indexOf(kc);
-        if(kcInd == -1)
-            kcInd = backupPairs.indexOf(kc);
-        if($(".button-"+(kcInd)+"").attr("pressure") == "true")
-            currentSounds[currentSoundPack][kcInd].stop();
-        $(".button-"+(kcInd)+"").attr("released","true");
-        // holdToPlay coloring, turned off for now
-        $(".button-"+(kcInd)+"").css("background-color", "white");
-        //$(".button-"+(kcInd)+"").css("background-color", $(".button-"+(kcInd)+"").attr("pressure") == "true" ? "lightgray" : "white");
+        if(this.switchSoundPackCheck(kc)){
+            // do nothing
+        }
+        else{
+            var kcInd = keyPairs.indexOf(kc);
+            if(kcInd == -1)
+                kcInd = backupPairs.indexOf(kc);
+            if(currentSounds[currentSoundPack][kcInd] != null){
+                if($(".button-"+(kcInd)+"").attr("pressure") == "true")
+                    currentSounds[currentSoundPack][kcInd].stop();
+                $(".button-"+(kcInd)+"").attr("released","true");
+                // holdToPlay coloring, turned off for now
+                $(".button-"+(kcInd)+"").css("background-color", "white");
+                //$(".button-"+(kcInd)+"").css("background-color", $(".button-"+(kcInd)+"").attr("pressure") == "true" ? "lightgray" : "white");
+            }
+        }
     }
     
     // play the key by finding the mapping,
@@ -200,31 +217,38 @@ var Keyboard_Space = new function(){
     }
     
     Keyboard.prototype.midiKeyDown = function(kc){
-        var kcInd = keyPairs.indexOf(kc);
-        if(kcInd == -1)
-            kcInd = backupPairs.indexOf(kc);
-        currentSounds[currentSoundPack][kcInd].stop();
-        currentSounds[currentSoundPack][kcInd].play();
-        
-        // go through all linked Areas in current chain
-        currentSongData["linkedAreas"]["chain"+(currentSoundPack+1)].forEach(function(el, ind, arr){
-            // for ever linked area array
-            for(var j = 0; j < el.length; j++){
-                // if key code is in linked area array
-                if(kcInd == el[j]){
-                    // stop all other sounds in linked area array
-                    for(var k = 0; k < el.length; k++){
-                        if(k != j)
-                            currentSounds[currentSoundPack][el[k]].stop();
+        if(this.switchSoundPackCheck(kc)){
+            // do nothing
+        }
+        else{
+            var kcInd = keyPairs.indexOf(kc);
+            if(kcInd == -1)
+                kcInd = backupPairs.indexOf(kc);
+            if(currentSounds[currentSoundPack][kcInd] != null){
+                currentSounds[currentSoundPack][kcInd].stop();
+                currentSounds[currentSoundPack][kcInd].play();
+                
+                // go through all linked Areas in current chain
+                currentSongData["linkedAreas"]["chain"+(currentSoundPack+1)].forEach(function(el, ind, arr){
+                    // for ever linked area array
+                    for(var j = 0; j < el.length; j++){
+                        // if key code is in linked area array
+                        if(kcInd == el[j]){
+                            // stop all other sounds in linked area array
+                            for(var k = 0; k < el.length; k++){
+                                if(k != j)
+                                    currentSounds[currentSoundPack][el[k]].stop();
+                            }
+                            break;
+                        }
                     }
-                    break;
-                }
+                });
+                
+                // set button color and attribute
+                $(".button-"+(kcInd)+"").attr("released","false");
+                $(".button-"+(kcInd)+"").css("background-color","rgb(255,160,0)");
             }
-        });
-        
-        // set button color and attribute
-        $(".button-"+(kcInd)+"").attr("released","false");
-        $(".button-"+(kcInd)+"").css("background-color","rgb(255,160,0)");
+        }
     }
     
     // switch sound pack and update pressures

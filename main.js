@@ -8,5 +8,5 @@ $(document).ready(function(){
    });
 });
 
-// TODO: add global color palette
+// TODO: maybe add global color palette for themes
 // TODO: maybe add a metronome and have a slider for on and off

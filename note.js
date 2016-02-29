@@ -7,6 +7,7 @@ var Note_Space = new function() {
     }
     
     // TODO: make sure that note is created in bounds
+    // TODO: modify mouseUp method to snap to current lines
     /**
      * A note
      * note-index of key code

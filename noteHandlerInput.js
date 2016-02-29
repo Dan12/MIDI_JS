@@ -182,11 +182,14 @@ var Set_Note_Handler_Input = new function() {
                 else if(e.detail.keyDown == 86){
                     var startCopying = this.midiEditor.getScrubBarAt();
                     var endBeat = 0;
+                    for(var note in this.selected)
+                        this.selected[note].selected = false;
+                    this.selected = [];
                     // create copies of notes on clipboard shifted forward so that the first note on the clipboard
                     // starts where the scrubbing bar is at
                     for(var n in this.clipboard){
                         var addNote = Note_Space.createNote(this.clipboard[n].note, startCopying+this.clipboard[n].beat-this.clipboardStart, this.clipboard[n].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
-                        this.addNewNote(addNote);
+                        this.insertNote(addNote);
                         this.selected.push(addNote);
                         addNote.selected = true;
                         endBeat = Math.max(endBeat, addNote.beat+addNote.length);
@@ -194,6 +197,7 @@ var Set_Note_Handler_Input = new function() {
                     // set srubbing bar to the end of the last note so that several copies
                     // can be appended right after each other
                     this.midiEditor.setScrubBarAt(endBeat);
+                    this.scroll(0,0,this.horizontalOffset,this.verticalOffset);
                 }
             }
             

@@ -282,12 +282,23 @@ var Note_Handler = new function() {
             // if no key needs to be set to up and all of the notes have started to play
             // beatAt is at the end of the song so stop playing
             if(thisObj.notesPlaying.length == 0 && playIndex >= thisObj.notes.length)
-                clearInterval(thisObj.playInterval);
+                thisObj.stopPlaying(true);
             
             // get the current time to be as accurate as possible
             var curTime = new Date().getTime();
             // set beatAt based on difference between start and end time
             thisObj.beatAt = startBeat+thisObj.MSToBeats*(new Date().getTime()-startTime);
+            
+            // go through all of the notes that have started to play and check if any of them 
+            // have stopped playing (their beat+length is behind or at the player bar)
+            // do this first in case of back to back notes, the key is released before it is pressed again
+            for(var n = 0; n < thisObj.notesPlaying.length; n++)
+                // if the note has stopped playing, send a key up message to player and remove note from playing notes
+                if(thisObj.notes[thisObj.notesPlaying[n]].beat+thisObj.notes[thisObj.notesPlaying[n]].length <= thisObj.beatAt){
+                    thisObj.midiEditor.playKeyUp(thisObj.notes[thisObj.notesPlaying[n]].note);
+                    thisObj.notesPlaying.splice(n,1);
+                    n--;
+                }
             
             // increment through the notes array until the next note is after the position of the player
             while(playIndex < thisObj.notes.length){
@@ -308,16 +319,6 @@ var Note_Handler = new function() {
                 //     break;
             }
             
-            // go through all of the notes that have started to play and check if any of them 
-            // have stopped playing (their beat+length is behind or at the player bar)
-            for(var n = 0; n < thisObj.notesPlaying.length; n++)
-                // if the note has stopped playing, send a key up message to player and remove note from playing notes
-                if(thisObj.notes[thisObj.notesPlaying[n]].beat+thisObj.notes[thisObj.notesPlaying[n]].length <= thisObj.beatAt){
-                    thisObj.midiEditor.playKeyUp(thisObj.notes[thisObj.notesPlaying[n]].note);
-                    thisObj.notesPlaying.splice(n,1);
-                    n--;
-                }
-            
             // use this to redraw about every 100ms
             redrawCounter+=curTime-prevTime;
             prevTime = curTime;
@@ -329,11 +330,13 @@ var Note_Handler = new function() {
     }
     
     // stop playing interval and clear all of the currently playing notes
-    NoteHandler.prototype.stopPlaying = function(){
+    NoteHandler.prototype.stopPlaying = function(end){
         clearInterval(this.playInterval);
         for(var note in this.notesPlaying)
             this.midiEditor.playKeyUp(this.notes[this.notesPlaying[note]].note);
         this.notesPlaying = [];
+        if(end)
+            this.midiEditor.stopPlaying({"text":"Stop","isDown":false});
     }
     
     // clear all notes
