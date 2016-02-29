@@ -1,6 +1,9 @@
 // Setup namespace
 var Input_Events = new function() {
     
+    // c and v, for copy and paste
+    var importantKeys = [67,86];
+    
     // return new inputevents object
     this.init = function(editor){
         this.Inputevents = new InputEvents(editor);
@@ -17,10 +20,12 @@ var Input_Events = new function() {
         this.detail.mouseX = -1;
         this.detail.mouseY = -1;
         this.detail.keyDown = null;
+        this.detail.ctrlKey = false;
         this.detail.deltaX = 0;
         this.detail.deltaY = 0;
         this.detail.scrollConsumes = 0;
         this.detail.doubleClickConsumes = 0;
+        
         this.editor = editor;
         this.prevMouseX = -1;
         this.prevMouseY = -1;
@@ -35,8 +40,21 @@ var Input_Events = new function() {
         $(this.editor).mousemove(function(e){thisObj.mouseInputMove(e); return false;});
         $(this.editor).mouseleave(function(e){thisObj.mouseInputLeave(e); return false;});
         $(this.editor).dblclick(function(e){e.preventDefault(); thisObj.mouseInputDoubleClick(e); return false;});
-        $(document).keydown(function(e){thisObj.keyInputDown(e); return false;});
-        $(document).keyup(function(e){thisObj.keyInputUp(e); return false;});
+        $(document).keydown(function(e){
+            // important keycodes for ctrl get passed down
+            if(!e.ctrlKey || importantKeys.indexOf(e.keyCode) != -1){
+                thisObj.keyInputDown(e); 
+                return false;
+            }
+        });
+        $(document).keyup(function(e){
+            // important keycodes for ctrl get passed down
+            if(!e.ctrlKey || importantKeys.indexOf(e.keyCode) != -1){
+                thisObj.keyInputUp(e); 
+                return false;
+            }
+        });
+        
         this.editor.addEventListener('mousewheel',function(e){e.preventDefault(); thisObj.mouseInputWheel(e); return false;});
         
         console.log("New Input Events");
@@ -45,12 +63,14 @@ var Input_Events = new function() {
     // keydown
     InputEvents.prototype.keyInputDown = function(event){
         this.detail.keyDown = event.keyCode;
+        this.detail.ctrlKey = event.ctrlKey;
         this.editor.dispatchEvent(this.inputEvent);
     }
     
     // keyup, set key to null
     InputEvents.prototype.keyInputUp = function(event){
         this.detail.keyDown = null;
+        this.detail.ctrlKey = false;
         this.editor.dispatchEvent(this.inputEvent);
     }
     

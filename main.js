@@ -9,6 +9,4 @@ $(document).ready(function(){
 });
 
 // TODO: add global color palette
-// TODO: add function pass note array between editor and noteHandler for loading and saving notes
-// TODO: add function to pass button press between editor and noteHandler for calling load and save functions
 // TODO: maybe add a metronome and have a slider for on and off

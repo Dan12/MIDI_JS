@@ -64,6 +64,10 @@ var MIDI_Editor = new function() {
         // send reference of this editor to player to link them together
         this.player.linkEditor(this);
         
+        // project id, unique id for each midi recording, 
+        // -1 is unsaved/blank project
+        this.projectId = -1;
+        
         console.log("New Editor created");
     }
     
@@ -119,15 +123,31 @@ var MIDI_Editor = new function() {
         this.player.midiKeyUp(kc);
     }
     
+    // send notes to keyboard to be saved by keyboard's mechanism
     Editor.prototype.sendNotes = function(notes){
-        this.player.saveNotes(notes);
+        this.player.saveNotes(notes, this.projectId);
     }
     
+    // keyboard confirms that notes have been saved and passes down projectId 
+    Editor.prototype.notesSaved = function(pid){
+        this.projectId = pid;
+        console.log(pid);
+    }
+    
+    // load button was pressed, so ask keyboard to load
     Editor.prototype.loadNotes = function(){
         return this.player.loadNotes();
     }
     
-    Editor.prototype.notesLoaded = function(notes){
+    // keyboard sends back the loaded notes and projectId
+    Editor.prototype.notesLoaded = function(notes, pid){
         this.midiWorkspace.notesLoaded(notes);
+        this.projectId = pid;
+        console.log(this.projectId);
+    }
+    
+    // new project was created so reset the project id
+    Editor.prototype.newProject = function(){
+        this.projectId = -1;
     }
 }

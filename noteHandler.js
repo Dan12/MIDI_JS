@@ -80,16 +80,31 @@ var Note_Handler = new function() {
         var thisObj = this;
         this.editor.addEventListener('InputEvent', function (e) {thisObj.generalInput(e);}, false);
         
+        // recording variables
+        // interval for record update
         this.recordInterval = null;
+        // start time to reset cursor to
         this.recordStartTime = 0;
+        // keep track of beat start
         this.recordBeatStart = 0;
+        // keep track of notes that have been pressed down but not released
         this.recordNoteStart = [];
+        // store conversion unit so that it doesn't always have to be calculated
         this.MSToBeats = 0;
+        // resolution, smallest unit editor is capable of handleing (1/128th of a beat)
         this.recordResolution = 128;
         
+        // playing variables
+        // interval for playing update
         this.playInterval = null;
+        // number of milliseconds between play interval update
         this.playResolution = 10;
+        // current notes playing but not finished
         this.notesPlaying = [];
+        
+        // clipboard for copy and paste
+        this.clipboard = [];
+        this.clipboardStart = 0;
         
         console.log("New Note Handler created");
     }
@@ -183,7 +198,7 @@ var Note_Handler = new function() {
             console.log(array);
             console.log(item);
             console.log(currentIndex+","+minIndex+","+maxIndex);
-            alert("Critical Error! Didn't find note");
+            console.log("***************** Critical Error! Didn't find note *****************");
         }
         return minIndex;
     }
@@ -340,15 +355,19 @@ var Note_Handler = new function() {
             this.addNewNote(Note_Space.createNote(n[i].note, n[i].beat, n[i].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y));
         this.selected = [];
         this.visibleNotes = [];
-        this.scroll(0,0,0,0);
+        this.scroll(0,0,this.horizontalOffset,this.verticalOffset);
     }
     
     // create a new note and add it to visibleNotes and notes array
-    // also check if it is a new farthest note
     NoteHandler.prototype.addNewNote = function(note){
+        this.insertNote(note);
+        this.visibleNotes.push(note);
+    }
+    
+    // add note to notes array and check for new max width
+    NoteHandler.prototype.insertNote = function(note){
         // this adds it at an index where, when added, the notes array will still be in order by beats
         this.notes.splice(this.findNote(this.notes, note, true), 0, note);
-        this.visibleNotes.push(note);
         if(note.px+note.pw > this.farthestNote){
             this.farthestNote = note.px+note.pw;
             this.midiEditor.setMaxWidth(this.farthestNote*this.resolution);

@@ -108,11 +108,11 @@ var MIDI = new function() {
         if(e.detail.mouseDown){
             // adjust scrubbing bar
             if(e.detail.mouseY > this.heightOffset && e.detail.mouseY < this.heightOffset+scrubBarHeight)
-                this.scrubBarAt = Math.max(0,(e.detail.mouseX-this.horizontalOffset-keySize)/this.BeatsToPixels);
+                this.scrubBarAt = Math.round(Math.max(0,(e.detail.mouseX-this.horizontalOffset-keySize)/this.BeatsToPixels)*4)/4;
             
             // scroll bar drag
             if(e.detail.mouseY > this.height+this.heightOffset-scrollBarWidth && e.detail.mouseX > keySize){
-                this.canvasScroll(e.detail.mouseX,e.datail.mouseY,e.detail.deltaX*(this.maxWidth/this.BeatsPerSection)/this.width,0);
+                this.canvasScroll(e.detail.mouseX,e.detail.mouseY,e.detail.deltaX*(this.maxWidth/this.BeatsPerSection)/this.width,0);
             }
             
             // scrolling edge drag
@@ -329,6 +329,7 @@ var MIDI = new function() {
         else if(b.text == "New"){
             this.stopPlaying(b);
             this.noteHandler.resetNotes();
+            this.drawClass.newProject();
         }
         else if(b.text == "Save"){
             this.drawClass.sendNotes(this.noteHandler.getNotes());
@@ -338,10 +339,12 @@ var MIDI = new function() {
         }
     }
     
+    // pass along loaded notes to the notes handler
     MIDI_Workspace.prototype.notesLoaded = function(notes){
         this.noteHandler.setNotes(notes);
     }
     
+    // stop playing the track
     MIDI_Workspace.prototype.stopPlaying = function(b){
         if(this.isRecording)
             this.scrubBarAt = this.noteHandler.stopRecording();
@@ -407,5 +410,15 @@ var MIDI = new function() {
     // called from note handler, pass keycode of note to editor, which will go to the player
     MIDI_Workspace.prototype.playKeyUp = function(noteInd){
         this.drawClass.midiKeyUp(keyPairs[noteInd]);
+    }
+    
+    // send scrubBar at to noteHandler
+    MIDI_Workspace.prototype.getScrubBarAt = function(){
+        return this.scrubBarAt;
+    }
+    
+    // set scrubBar at from noteHandler
+    MIDI_Workspace.prototype.setScrubBarAt = function(scrubAt){
+        this.scrubBarAt = scrubAt;
     }
 }

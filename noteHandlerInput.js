@@ -83,11 +83,11 @@ var Set_Note_Handler_Input = new function() {
                     this.multiSelect.update(e.detail.mouseX, e.detail.mouseY, this.horizontalOffset, this.verticalOffset);
                     
                     // put the notes in the selected area into the selected array
-                    for(var note in this.visibleNotes)
+                    for(var note in this.notes)
                         // if a note is visible and was not yet selected, check if it is selected now
-                        if(!this.visibleNotes[note].selected && this.multiSelect.noteInMulti(this.visibleNotes[note])){
-                            this.selected.push(this.visibleNotes[note]);
-                            this.visibleNotes[note].selected = true;
+                        if(!this.notes[note].selected && this.multiSelect.noteInMulti(this.notes[note])){
+                            this.selected.push(this.notes[note]);
+                            this.notes[note].selected = true;
                         }
                         
                     for(var note in this.selected)
@@ -167,7 +167,35 @@ var Set_Note_Handler_Input = new function() {
                 this.selected = [];
             }
             // TODO: maybe add functionality for space bar to play and pause
-            // TODO: add functionality for copy and paste
+            else if(e.detail.ctrlKey){
+                // c, copy
+                if(e.detail.keyDown == 67){
+                    // last note
+                    this.clipboardStart = this.notes[this.notes.length-1].beat;
+                    this.clipboard = [];
+                    for(var n in this.selected){
+                        this.clipboard.push(this.selected[n]);
+                        this.clipboardStart = Math.min(this.clipboardStart, this.selected[n].beat)
+                    }
+                }
+                // v, paste
+                else if(e.detail.keyDown == 86){
+                    var startCopying = this.midiEditor.getScrubBarAt();
+                    var endBeat = 0;
+                    // create copies of notes on clipboard shifted forward so that the first note on the clipboard
+                    // starts where the scrubbing bar is at
+                    for(var n in this.clipboard){
+                        var addNote = Note_Space.createNote(this.clipboard[n].note, startCopying+this.clipboard[n].beat-this.clipboardStart, this.clipboard[n].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
+                        this.addNewNote(addNote);
+                        this.selected.push(addNote);
+                        addNote.selected = true;
+                        endBeat = Math.max(endBeat, addNote.beat+addNote.length);
+                    }
+                    // set srubbing bar to the end of the last note so that several copies
+                    // can be appended right after each other
+                    this.midiEditor.setScrubBarAt(endBeat);
+                }
+            }
             
             // if mouse dragged, remove possible new note
             if(e.detail.mouseDrag){
@@ -187,11 +215,10 @@ var Set_Note_Handler_Input = new function() {
                     for(var note in this.selected)
                         this.notes.splice(this.findNote(this.notes, this.selected[note], false),1);
                     
-                    // TODO: check for new max width
                     for(var note in this.selected){
                         this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat, this.maxKeys);
                         // reinsert selected notes into notes array in their correct place
-                        this.notes.splice(this.findNote(this.notes, this.selected[note], true), 0, this.selected[note]);
+                        this.insertNote(this.selected[note]);
                     }
                     this.selectedSet = true;
                 }

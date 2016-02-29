@@ -120,15 +120,17 @@ var Keyboard_Space = new function(){
                 thisObj.switchSoundPack();
             }
             else{
-                var keyInd = keyPairs.indexOf(e.keyCode);
-                if(keyInd == -1)
-                    keyInd = backupPairs.indexOf(e.keyCode);
-                //console.log(keyInd);
-                //console.log(e.keyCode);
-                if($(".button-"+(keyInd)+"").attr("released") == "true" && currentSounds[currentSoundPack][keyInd] != null){
-                    thisObj.playKey(e.keyCode);
+                if(!e.ctrlKey){
+                    var keyInd = keyPairs.indexOf(e.keyCode);
+                    if(keyInd == -1)
+                        keyInd = backupPairs.indexOf(e.keyCode);
+                    //console.log(keyInd);
+                    //console.log(e.keyCode);
+                    if($(".button-"+(keyInd)+"").attr("released") == "true" && currentSounds[currentSoundPack][keyInd] != null){
+                        thisObj.playKey(e.keyCode);
+                    }
+                    e.preventDefault();
                 }
-                e.preventDefault();
             }
         });
         
@@ -141,7 +143,7 @@ var Keyboard_Space = new function(){
         });
     }
     
-    // setup touchscreen, kindof works
+    // setup touchscreen, kind of works
     Keyboard.prototype.touchScreenSetup = function(){
         var thisObj = this;
         $(".button").bind("touchstart", function(){
@@ -266,15 +268,20 @@ var Keyboard_Space = new function(){
         });
     }
     
-    Keyboard.prototype.saveNotes = function(notes){
+    // send request to server to save the notes to the corresponding projectId (pid)
+    Keyboard.prototype.saveNotes = function(notes, pid){
         var saveNote = [];
         for(var n in notes)
             saveNote.push({"note":notes[n].note, "beat":notes[n].beat, "length":notes[n].length});
         console.log(JSON.stringify(saveNote));
+        // send project id back to editor (if new project, will be new pid)
+        this.editor.notesSaved(pid);
     }
     
+    // ask the user for the project they would like to load and then load that project from the server
+    // send back a notes array of the loaded project with note,beat,and length and the project id
     Keyboard.prototype.loadNotes = function(){
-        this.editor.notesLoaded([{"note":2,"beat":3,"length":1},{"note":3,"beat":6,"length":1}]);
+        this.editor.notesLoaded([{"note":2,"beat":3,"length":1},{"note":3,"beat":6,"length":1}],1);
     }
     
     // TODO: convert keypairs to dictionarys/objects
