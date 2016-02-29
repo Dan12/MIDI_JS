@@ -85,7 +85,7 @@ var Note_Handler = new function() {
         this.recordBeatStart = 0;
         this.recordNoteStart = [];
         this.MSToBeats = 0;
-        this.recordResolution = 8;
+        this.recordResolution = 128;
         
         this.playInterval = null;
         this.playResolution = 10;
@@ -95,7 +95,7 @@ var Note_Handler = new function() {
     }
     
     // on mouse scroll
-    NoteHandler.prototype.scroll = function(ho, vo){
+    NoteHandler.prototype.scroll = function(mx,my,ho, vo){
         // set offsets and change in offsets
         var dx = this.horizontalOffset-ho;
         var dy = this.verticalOffset-vo;
@@ -110,6 +110,9 @@ var Note_Handler = new function() {
         if(!this.multiSelect.isActive && !this.selectedMouseUp)
             for(var note in this.selected)
                 this.selected[note].moveNote(dx,dy);
+                
+        if(this.multiSelect.isActive)
+            this.multiSelect.update(mx,my,ho,vo);
         
         // TODO: make this run faster by initially checking by beat range of window
         // reset visible notes array
@@ -316,6 +319,28 @@ var Note_Handler = new function() {
         for(var note in this.notesPlaying)
             this.midiEditor.playKeyUp(this.notes[this.notesPlaying[note]].note);
         this.notesPlaying = [];
+    }
+    
+    // clear all notes
+    NoteHandler.prototype.resetNotes = function(){
+        this.selected = [];
+        this.notes = [];
+        this.visibleNotes = [];
+    }
+    
+    // return all notes to save
+    NoteHandler.prototype.getNotes = function(){
+        return this.notes;
+    }
+    
+    NoteHandler.prototype.setNotes = function(n){
+        console.log(n);
+        this.notes = []
+        for(var i in n)
+            this.addNewNote(Note_Space.createNote(n[i].note, n[i].beat, n[i].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y));
+        this.selected = [];
+        this.visibleNotes = [];
+        this.scroll(0,0,0,0);
     }
     
     // create a new note and add it to visibleNotes and notes array

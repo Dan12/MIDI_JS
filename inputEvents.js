@@ -28,6 +28,7 @@ var Input_Events = new function() {
         // setup all input methods
         var thisObj = this;
         // detail refers to same object
+        // TODO: only return false on operations that the editor will override
         this.inputEvent = new CustomEvent('InputEvent', {"detail":this.detail});
         $(this.editor).mousedown(function(e){thisObj.mouseInputDown(e); return false;});
         $(this.editor).mouseup(function(e){thisObj.mouseInputUp(e); return false;});

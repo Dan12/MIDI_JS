@@ -100,7 +100,7 @@ var MIDI = new function() {
         
         // if scrolling and mouse in MIDI workspace, scroll canvas and consume the scroll
         if(e.detail.scrollConsumes > 0 && e.detail.mouseY > this.heightOffset){
-            this.canvasScroll(e.detail.deltaX, e.detail.deltaY);
+            this.canvasScroll(e.detail.mouseX,e.detail.mouseY,e.detail.deltaX, e.detail.deltaY);
             e.detail.scrollConsumes--;
         }
         
@@ -112,7 +112,7 @@ var MIDI = new function() {
             
             // scroll bar drag
             if(e.detail.mouseY > this.height+this.heightOffset-scrollBarWidth && e.detail.mouseX > keySize){
-                this.canvasScroll(e.detail.deltaX*(this.maxWidth/this.BeatsPerSection)/this.width,0);
+                this.canvasScroll(e.detail.mouseX,e.datail.mouseY,e.detail.deltaX*(this.maxWidth/this.BeatsPerSection)/this.width,0);
             }
             
             // scrolling edge drag
@@ -130,8 +130,9 @@ var MIDI = new function() {
     MIDI_Workspace.prototype.checkEdgeScroll = function(mx, my, dx, dy){
         // if mouse is in one of the corners and the direction of the mouse 
         // is into that corner (prevents scrolling when selecting a note in one of the corners and moving it the other way)
-        if((mx < keySize*2 && dx < 0) || (mx > this.width-keySize && dx > 0) || ((my < this.height+this.heightOffset-scrollBarWidth && my > this.height+this.heightOffset-scrollBarWidth-keySize) && dy > 0) || ((my > this.heightOffset+scrubBarHeight && my < this.heightOffset+scrubBarHeight+keySize) && dy < 0)){
-            if(!this.edgeScroll){
+        if(mx < keySize*2 || mx > this.width-keySize || (my < this.height+this.heightOffset-scrollBarWidth && my > this.height+this.heightOffset-scrollBarWidth-keySize) || (my > this.heightOffset+scrubBarHeight && my < this.heightOffset+scrubBarHeight+keySize)){
+            // second if statement so that the else doesn't get called if dx or dy is zero but the mouse is still in the corner
+            if(!this.edgeScroll && ((mx < keySize*2 && dx < 0) || (mx > this.width-keySize && dx > 0) || ((my < this.height+this.heightOffset-scrollBarWidth && my > this.height+this.heightOffset-scrollBarWidth-keySize) && dy > 0) || ((my > this.heightOffset+scrubBarHeight && my < this.heightOffset+scrubBarHeight+keySize) && dy < 0))){
                 this.edgeScroll = true;
                 var thisObj = this;
                 var velocity = [2];
@@ -148,7 +149,7 @@ var MIDI = new function() {
                 // scroll by scroll velocity every 100ms until mouse is lifted up
                 // or the mouse is out of a corner
                 this.scrollInterval = setInterval(function(){
-                    thisObj.canvasScroll(velocity[0],velocity[1]);
+                    thisObj.canvasScroll(mx,my,velocity[0],velocity[1]);
                     thisObj.drawClass.draw();
                 },100);
             }
@@ -163,7 +164,7 @@ var MIDI = new function() {
     
     // change horizontal and vertical offsets by dx and dy respectively
     // make sure that horizontal and vertical offsets are within their bounds
-    MIDI_Workspace.prototype.canvasScroll = function(dx,dy){
+    MIDI_Workspace.prototype.canvasScroll = function(mx,my,dx,dy){
         this.horizontalOffset-=dx;
         this.verticalOffset-=dy;
         this.verticalOffset = Math.max(this.verticalOffset, -keys.length*keySize+this.height-scrubBarHeight-borderWidth-scrollBarWidth);
@@ -172,14 +173,14 @@ var MIDI = new function() {
         this.horizontalOffset = Math.max(this.horizontalOffset, Math.min(-(this.maxWidth/this.BeatsPerSection)+this.width,0));
         
         // call scroll in note handler to move selected notes and update visible notes
-        this.noteHandler.scroll(this.horizontalOffset, this.verticalOffset);
+        this.noteHandler.scroll(mx,my,this.horizontalOffset, this.verticalOffset);
     }
     
     // window resize, update width and height, make sure offsets are still in bounds, and resize note handler
     MIDI_Workspace.prototype.windowResize = function(width, height){
         this.width = width;
         this.height = height-this.heightOffset;
-        this.canvasScroll(0,0);
+        this.canvasScroll(-1,-1,0,0);
         this.noteHandler.windowResize(this.width-keySize, this.height-scrubBarHeight-scrollBarWidth);
         this.header.windowResize();
     }
@@ -323,18 +324,36 @@ var MIDI = new function() {
             }
         }
         else if(b.text == "Stop"){
-            if(this.isRecording)
-                this.scrubBarAt = this.noteHandler.stopRecording();
-            else
-                this.scrubBarAt = 0;
-            if(this.isPlaying)
-                this.noteHandler.stopPlaying();
-            this.isPlaying = false;
-            this.isRecording = false;
-            this.noteHandler.beatAt = this.scrubBarAt;
-            this.header.resetButtons();
-            b.isDown = true;
+            this.stopPlaying(b);
         }
+        else if(b.text == "New"){
+            this.stopPlaying(b);
+            this.noteHandler.resetNotes();
+        }
+        else if(b.text == "Save"){
+            this.drawClass.sendNotes(this.noteHandler.getNotes());
+        }
+        else if(b.text == "Load"){
+            this.drawClass.loadNotes();
+        }
+    }
+    
+    MIDI_Workspace.prototype.notesLoaded = function(notes){
+        this.noteHandler.setNotes(notes);
+    }
+    
+    MIDI_Workspace.prototype.stopPlaying = function(b){
+        if(this.isRecording)
+            this.scrubBarAt = this.noteHandler.stopRecording();
+        else
+            this.scrubBarAt = 0;
+        if(this.isPlaying)
+            this.noteHandler.stopPlaying();
+        this.isPlaying = false;
+        this.isRecording = false;
+        this.noteHandler.beatAt = this.scrubBarAt;
+        this.header.resetButtons();
+        b.isDown = true;
     }
     
     // update slider value in midi workspace
@@ -344,7 +363,7 @@ var MIDI = new function() {
             this.BeatsPerSection = resolutions[this.ZoomLevel+5];
             this.BeatsToPixels = PixelsPerSection/this.BeatsPerSection;
             this.noteHandler.changeResolution(this.BeatsPerSection);
-            this.canvasScroll(0,0);
+            this.canvasScroll(-1,-1,0,0);
         }
         else if(t == "BPM")
             this.BPM = v;

@@ -1,13 +1,13 @@
 body{
     font-family: Arial;
     text-align: center;
-    background-color: rgb(233,232,228);
+    background-color: rgb(243,242,248);
 }
 
 h1{
     margin: 20px;
     font-size: 54px;
-    color: rgb(99,121,109);
+    color: rgb(99,101,109);
 }
 
 .editor_canvas{
@@ -27,4 +27,48 @@ h1{
     overflow-x: hidden;
     border: solid 1px black;
     display: inline-block;
+}
+
+/*keyboard*/
+
+.button{
+    display: inline-block;
+    padding: 10px 2px;
+    margin: 4px;
+    width:56px;
+    height:40px;
+    font-size:35px;
+    text-align:center;
+    border: solid 1px black;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: white;
+}
+
+.buttons{
+    display:inline-block;
+}
+
+.link{
+    padding: 10px 0;
+    width: 600px;
+    margin: auto;
+}
+
+.click_button{
+    border-radius: 4px;
+    border: 1px solid black;
+    cursor: pointer;
+    font-size: 20px;
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 0 10px;
+}
+
+.loaded_song{
+    padding: 2px 10px;
+    background-color: rgb(250,250,250);
+    font-size: 30px;
+    margin: 8px 0;
+    cursor: pointer;
 }

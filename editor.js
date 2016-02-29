@@ -91,7 +91,7 @@ var MIDI_Editor = new function() {
         if(this.midiWorkspace)
             this.midiWorkspace.draw(this.context);
         var t1 = performance.now();
-        //console.log("Call took " + (t1 - t0) + " milliseconds.")
+        // console.log("Call took " + (t1 - t0) + " milliseconds.")
     }
     
     // is the editor ready (right now ask have all images loaded)
@@ -117,5 +117,17 @@ var MIDI_Editor = new function() {
     // called from midi workspace, send key code up to player
     Editor.prototype.midiKeyUp = function(kc){
         this.player.midiKeyUp(kc);
+    }
+    
+    Editor.prototype.sendNotes = function(notes){
+        this.player.saveNotes(notes);
+    }
+    
+    Editor.prototype.loadNotes = function(){
+        return this.player.loadNotes();
+    }
+    
+    Editor.prototype.notesLoaded = function(notes){
+        this.midiWorkspace.notesLoaded(notes);
     }
 }

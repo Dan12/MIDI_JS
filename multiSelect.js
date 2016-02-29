@@ -85,7 +85,8 @@ var Multi_Select_Space = new function(){
                 multiH-=y-multiY;
                 multiY = y;
             }
-            ctx.fillRect(this.x+ho, multiY, this.w, multiH);
+            if(multiH > 0)
+                ctx.fillRect(this.x+ho, multiY, this.w, multiH);
             ctx.globalAlpha=1;
         }
     }
