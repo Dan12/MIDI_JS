@@ -102,6 +102,9 @@ var Note_Handler = new function() {
         // current notes playing but not finished
         this.notesPlaying = [];
         
+        // redraw time in milliseconds during intervals
+        this.intervalRedrawResolution = 40;
+        
         // clipboard for copy and paste
         this.clipboard = [];
         this.clipboardStart = 0;
@@ -285,7 +288,7 @@ var Note_Handler = new function() {
                 thisObj.midiEditor.canvasScroll(-1,-1,pixelsAt+thisObj.horizontalOffset-thisObj.width/2,0);
             
             thisObj.midiEditor.redrawAll();
-        },100);
+        },thisObj.intervalRedrawResolution);
     }
     
     // stop recording interval, clear any started notes, and reset beatAt
@@ -397,8 +400,8 @@ var Note_Handler = new function() {
             // use this to redraw about every 100ms
             redrawCounter+=curTime-prevTime;
             prevTime = curTime;
-            if(redrawCounter > 20){
-                redrawCounter-=20;
+            if(redrawCounter > thisObj.intervalRedrawResolution){
+                redrawCounter-=thisObj.intervalRedrawResolution;
                 thisObj.midiEditor.redrawAll();
             }
         },this.playResolution);
