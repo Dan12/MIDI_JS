@@ -2,12 +2,10 @@
 var Note_Space = new function() {
     
     // return a new note
-    this.createNote = function(note,beat,length,h,ppb,xs,ys){
-        return new Note(note,beat,length,h,ppb,xs,ys);
+    this.createNote = function(note,beat,length,h,ppb,xs,ys,nmax){
+        return new Note(note,beat,length,h,ppb,xs,ys,nmax);
     }
     
-    // TODO: make sure that note is created in bounds
-    // TODO: modify mouseUp method to snap to current lines
     /**
      * A note
      * note-index of key code
@@ -18,11 +16,18 @@ var Note_Space = new function() {
      * xs-x start position of input handler window
      * ys-y start position of input handler window
      */
-    var Note = function(note,beat,length,h,ppb,xs,ys){
+    var Note = function(note,beat,length,h,ppb,xs,ys,nmax){
         this.note = note;
         this.beat = beat;
         this.length = length;
         this.height = h;
+        
+        // make sure that note is drawn in bounds
+        this.note = Math.max(0,this.note);
+        this.note = Math.min(nmax-1,this.note);
+        
+        this.note = Math.max(0,this.note);
+        this.note = Math.min(nmax,this.note);
         
         // set absolute pixel positions for the note's x and y position
         this.px = ppb*this.beat+xs;
@@ -131,7 +136,7 @@ var Note_Space = new function() {
     }
     
     // if the mouse is up, the note has to snap and adjust its position
-    Note.prototype.mouseUp = function(r,ppn,pps,ppb,mk){
+    Note.prototype.mouseUp = function(r,ppn,pps,ppb,mk,single){
         // calculate the change in the amount of section, rounded to one 4th of a section
         var beatChange = Math.round(4*this.deltaX/pps)/4;
         // calculate the note change (rounding means that if more that half was over, it would snap to that side)
@@ -149,6 +154,13 @@ var Note_Space = new function() {
         // multiply beat change by resolution because beat change is in sections
         this.beat+=beatChange*r;
         this.note+=noteChange;
+        
+        // only snap to resolution if single select
+        if(single){
+            var prevBeat = this.beat;
+            this.beat = Math.round(this.beat*(4/r))/(4/r);
+            this.px+=(this.beat-prevBeat)*pps;
+        }
         
         // if the note is outside of its bounds, set its position to the bounds
         // note: no beat maximum bounds because editor resizes as more notes are added

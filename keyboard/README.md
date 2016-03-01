@@ -11,3 +11,7 @@
 ### To send keys to the editor, use the following methods
 -  this.editor.recordKeyDown(keyCode)
 -  this.editor.recordKeyUp(keyCode)
+
+### Performance Test
+- About 2000 notes, playback was fine, usually ~ 8 milliseconds of delay
+- scrolling while playing went up to ~ 35 milliseconds of delay and there was a clear delay in the sound

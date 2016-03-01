@@ -51,7 +51,7 @@ var Editor_Header = new function() {
         this.items.push(new Button(itemLeftPadding+buttonMargin*6,10,"Load",images[5],m));
         this.items.push(new Slider(itemLeftPadding+buttonMargin*7,30,1,9,6,"Zoom",m));
         // doubles as playback speed
-        this.items.push(new Slider(itemLeftPadding+buttonMargin*8,30,40,200,140,"BPM",m));
+        this.items.push(new Slider(itemLeftPadding+buttonMargin*8,30,40,240,140,"BPM",m));
         
         // add listener for input events and use it to call a local object method
         var thisObj = this;
@@ -241,7 +241,7 @@ var Editor_Header = new function() {
         else
             ctx.fillStyle = "rgb(230,230,230)";
         ctx.beginPath();
-        ctx.ellipse(this.x+this.width/2, this.y+this.height/2, this.width/2, this.height/2, 0, 0, 2*Math.PI);
+        ctx.arc(this.x+this.width/2, this.y+this.height/2, this.width/2, 0, 2*Math.PI, false);
         ctx.fill();
         
         // draw icon

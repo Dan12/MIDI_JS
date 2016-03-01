@@ -6,6 +6,8 @@ var Note_Handler = new function() {
         return new NoteHandler(editor, x, y, w, h, p, mk, m);
     }
     
+    // TODO: when recording or playing, check if beatAt is off the screen and scroll to bring it onto the screen 
+    
     /**
      * NoteHandler-creates and handles all of the notes as well 
      *      as being the parent object for all note activities
@@ -98,13 +100,19 @@ var Note_Handler = new function() {
         // interval for playing update
         this.playInterval = null;
         // number of milliseconds between play interval update
-        this.playResolution = 10;
+        this.playResolution = 5;
         // current notes playing but not finished
         this.notesPlaying = [];
         
         // clipboard for copy and paste
         this.clipboard = [];
         this.clipboardStart = 0;
+        
+        // fast visible note search variables
+        // beat of first note in view
+        this.viewStartBeat = 0;
+        // index of first note in view
+        this.viewStartInd = 0;
         
         console.log("New Note Handler created");
     }
@@ -127,15 +135,75 @@ var Note_Handler = new function() {
                 this.selected[note].moveNote(dx,dy);
                 
         if(this.multiSelect.isActive)
-            this.multiSelect.update(mx,my,ho,vo);
+            this.updateMulitSelect(mx,my);
         
-        // TODO: make this run faster by initially checking by beat range of window
         // reset visible notes array
         this.visibleNotes = [];
-        // go through notes and add those in the note handler window to visibleNotes
+        
+        // find the first beat in view
+        var curBeat = -1*this.horizontalOffset/this.PixelsPerBeat;
+        // if the index no longer matches up, something was deleted or moved
+        if(this.viewStartInd >= this.notes.length)
+            this.viewStartInd = this.notes.length == 0 ? 0 : this.notes.length-1;
+            
+        if(this.notes.length != 0){
+            // if view has moved backwards, iterate backwards
+            if(curBeat < this.viewStartBeat){
+                while(this.viewStartInd >= 0){
+                    // if we found a note behind the view, set it to the next note
+                    if(this.notes[this.viewStartInd].beat+this.notes[this.viewStartInd].length < curBeat){
+                        this.viewStartInd++;
+                        break;
+                    }
+                    this.viewStartInd--;
+                }
+            }
+            // view moved forwards
+            else if(curBeat > this.viewStartBeat){
+                while(this.viewStartInd <= this.notes.length-1){
+                    // if we found a note in the view, set it to the next note
+                    if(this.notes[this.viewStartInd].beat+this.notes[this.viewStartInd].length >= curBeat){
+                        this.viewStartInd--;
+                        break;
+                    }
+                    this.viewStartInd++;
+                }
+            }
+            this.viewStartInd = Math.min(this.viewStartInd, this.notes.length-1);
+            this.viewStartInd = Math.max(this.viewStartInd, 0);
+            if(this.notes.length != 0)
+                this.viewStartBeat = this.notes[this.viewStartInd].beat+this.notes[this.viewStartInd].length;
+            // console.log(this.viewStartInd+","+this.viewStartBeat);
+            
+            
+            // go through notes from begining of view window and add those in the note handler window to visibleNotes
+            for(var note = this.viewStartInd; note < this.notes.length; note++){
+                if(this.notes[note].isVisible(this.x, this.y, this.width, this.height, this.horizontalOffset, this.verticalOffset))
+                    this.visibleNotes.push(this.notes[note]);
+                // stop when out of window; can do this because we know that notes are in order by beats
+                if(this.notes[note].beat >= curBeat+this.width/this.PixelsPerBeat);
+            }
+        }
+    }
+    
+    NoteHandler.prototype.updateMulitSelect = function(mx, my){
+        // update the drag selector object
+        this.multiSelect.update(mx, my, this.horizontalOffset, this.verticalOffset);
+        
+        // put the notes in the selected area into the selected array
         for(var note in this.notes)
-            if(this.notes[note].isVisible(this.x, this.y, this.width, this.height, this.horizontalOffset, this.verticalOffset))
-                this.visibleNotes.push(this.notes[note]);
+            // if a note is visible and was not yet selected, check if it is selected now
+            if(!this.notes[note].selected && this.multiSelect.noteInMulti(this.notes[note])){
+                this.selected.push(this.notes[note]);
+                this.notes[note].selected = true;
+            }
+            
+        for(var note in this.selected)
+            // if a note was selected but is no longer in the selected area, remove it from the selected array
+            if(this.selected[note].selected && !this.multiSelect.noteInMulti(this.selected[note])){
+                this.selected[note].selected = false;
+                this.selected.splice(note,1);
+            }
     }
     
     // draw all visible notes and multiselect
@@ -203,8 +271,6 @@ var Note_Handler = new function() {
         return minIndex;
     }
     
-    // TODO: when recording or playing, check if beatAt is off the screen and scroll to bring it onto the screen
-    
     // start recording with given BPM and starting from beatAt
     // call redraw every 100ms
     NoteHandler.prototype.startRecording = function(BPM, beatAt){
@@ -246,7 +312,7 @@ var Note_Handler = new function() {
         for(var n = 0; n < this.recordNoteStart.length; n++)
             if(this.recordNoteStart[n].note == nInd){
                 // beat accuracy up to 1/32 of a beat
-                this.addNewNote(Note_Space.createNote(nInd,Math.round((this.recordBeatStart+(this.recordNoteStart[n].sTime-this.recordStartTime)*this.MSToBeats)*this.recordResolution)/this.recordResolution,Math.max(Math.round((curTime-this.recordNoteStart[n].sTime)*this.MSToBeats*this.recordResolution)/this.recordResolution, 1/this.recordResolution), this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y))
+                this.addNewNote(Note_Space.createNote(nInd,Math.round((this.recordBeatStart+(this.recordNoteStart[n].sTime-this.recordStartTime)*this.MSToBeats)*this.recordResolution)/this.recordResolution,Math.max(Math.round((curTime-this.recordNoteStart[n].sTime)*this.MSToBeats*this.recordResolution)/this.recordResolution, 1/this.recordResolution), this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y, this.maxKeys))
                 this.recordNoteStart.splice(n,1);
                 n--;
                 break;
@@ -355,7 +421,7 @@ var Note_Handler = new function() {
         console.log(n);
         this.notes = []
         for(var i in n)
-            this.addNewNote(Note_Space.createNote(n[i].note, n[i].beat, n[i].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y));
+            this.addNewNote(Note_Space.createNote(n[i].note, n[i].beat, n[i].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y, this.maxKeys));
         this.selected = [];
         this.visibleNotes = [];
         this.scroll(0,0,this.horizontalOffset,this.verticalOffset);

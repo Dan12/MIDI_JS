@@ -87,7 +87,6 @@ var MIDI_Editor = new function() {
         this.draw();
     }
     
-    // TODO: do a perfomance test with a lot of notes
     // clears canvas and draw midiworkspace
     Editor.prototype.draw = function(){
         var t0 = performance.now();

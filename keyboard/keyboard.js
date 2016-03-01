@@ -101,9 +101,10 @@ var Keyboard_Space = new function(){
             //console.log(e.keyCode);
             if(thisObj.switchSoundPackCheck(e.keyCode)){
                 // do nothing
+                thisObj.playKey(e.keyCode);
             }
             else{
-                if(!e.ctrlKey){
+                if(!(e.ctrlKey || e.metaKey)){
                     var keyInd = keyPairs.indexOf(e.keyCode);
                     if(keyInd == -1)
                         keyInd = backupPairs.indexOf(e.keyCode);
@@ -118,11 +119,19 @@ var Keyboard_Space = new function(){
         });
         
         $(document).keyup(function(e){
-            var keyInd = keyPairs.indexOf(e.keyCode);
-            if(keyInd == -1)
-                keyInd = backupPairs.indexOf(e.keyCode);
-            if(currentSounds[currentSoundPack][keyInd] != null)
+            if(thisObj.switchSoundPackCheck(e.keyCode)){
+                // do nothing
                 thisObj.releaseKey(e.keyCode);
+            }
+            else{
+                if(!(e.ctrlKey || e.metaKey)){
+                    var keyInd = keyPairs.indexOf(e.keyCode);
+                    if(keyInd == -1)
+                        keyInd = backupPairs.indexOf(e.keyCode);
+                    if(currentSounds[currentSoundPack][keyInd] != null)
+                        thisObj.releaseKey(e.keyCode);
+                }
+            }
         });
     }
     

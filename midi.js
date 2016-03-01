@@ -37,6 +37,13 @@ var MIDI = new function() {
                     90,88,67,86,66,78,77,188,190,191,16,
                     37,39,38,40];
     
+    // alternate keys for firefox
+    var backupPairs = [49,50,51,52,53,54,55,56,57,48,173,61,
+                       81,87,69,82,84,89,85,73,79,80,219,221,
+                       65,83,68,70,71,72,74,75,76,59,222,13,
+                       90,88,67,86,66,78,77,188,190,191,16,
+                       37,39,38,40];
+    
     
     // returns new midi workspace
     this.init = function(editor, vw, vh, ho, dc){
@@ -339,6 +346,14 @@ var MIDI = new function() {
         }
     }
     
+    // when the spacebar is pressed, called from noteHandler
+    MIDI_Workspace.prototype.spaceKey = function(){
+        if(this.isPlaying)
+            this.buttonPress({"text":"Pause"});
+        else
+            this.buttonPress({"text":"Play"});
+    }
+    
     // pass along loaded notes to the notes handler
     MIDI_Workspace.prototype.notesLoaded = function(notes){
         this.noteHandler.setNotes(notes);
@@ -389,6 +404,8 @@ var MIDI = new function() {
     MIDI_Workspace.prototype.recordKeyDown = function(kc){
         if(this.isRecording){
             var noteInd = keyPairs.indexOf(kc);
+            if(noteInd == -1)
+                noteInd = backupPairs.indexOf(kc);
             if(noteInd != -1)
                 this.noteHandler.recordNoteDown(noteInd);
         }
@@ -398,6 +415,8 @@ var MIDI = new function() {
     MIDI_Workspace.prototype.recordKeyUp = function(kc){
         if(this.isRecording){
             var noteInd = keyPairs.indexOf(kc);
+            if(noteInd == -1)
+                noteInd = backupPairs.indexOf(kc);
             if(noteInd != -1)
                 this.noteHandler.recordNoteUp(noteInd);
         }

@@ -10,3 +10,5 @@ $(document).ready(function(){
 
 // TODO: maybe add global color palette for themes
 // TODO: maybe add a metronome and have a slider for on and off
+// TODO: long run add some kind of guitar hero thing
+// TODO: long run add lights

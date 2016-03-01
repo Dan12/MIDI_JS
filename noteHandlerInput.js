@@ -79,23 +79,7 @@ var Set_Note_Handler_Input = new function() {
                 }
                 // doing drag select
                 else{
-                    // update the drag selector object
-                    this.multiSelect.update(e.detail.mouseX, e.detail.mouseY, this.horizontalOffset, this.verticalOffset);
-                    
-                    // put the notes in the selected area into the selected array
-                    for(var note in this.notes)
-                        // if a note is visible and was not yet selected, check if it is selected now
-                        if(!this.notes[note].selected && this.multiSelect.noteInMulti(this.notes[note])){
-                            this.selected.push(this.notes[note]);
-                            this.notes[note].selected = true;
-                        }
-                        
-                    for(var note in this.selected)
-                        // if a note was selected but is no longer in the selected area, remove it from the selected array
-                        if(this.selected[note].selected && !this.multiSelect.noteInMulti(this.selected[note])){
-                            this.selected[note].selected = false;
-                            this.selected.splice(note,1);
-                        }
+                    this.updateMulitSelect(e.detail.mouseX, e.detail.mouseY);
                         
                     // not new note creation
                     exit = true;
@@ -113,7 +97,7 @@ var Set_Note_Handler_Input = new function() {
                 // if nothing is selected, create a potential new note, only confirmed if user doesn't drag (indicating a drag select)
                 if(!exit && this.selectedMouseUp && e.detail.mouseX > this.x && e.detail.mouseX < this.x+this.width && e.detail.mouseY > this.y && e.detail.mouseY < this.y+this.height)
                     // get mouse pixel position in terms of input handler window, convert to notes and beats, pass a few other parameters to help set up note
-                    this.possibleNewNote = Note_Space.createNote(Math.floor((e.detail.mouseY-this.y-this.verticalOffset)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
+                    this.possibleNewNote = Note_Space.createNote(Math.floor((e.detail.mouseY-this.y-this.verticalOffset)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y, this.maxKeys);
                     
                     // this version takes into account mouse offsets but you can place a note over another one without knowing it in edge cases
                     // this.possibleNewNote = Note_Space.createNote(Math.floor((e.detail.mouseY-this.y-this.verticalOffset-5)/this.PixelsPerNote), Math.floor((e.detail.mouseX-this.x-this.horizontalOffset-4)/this.PixelsPerSection)*this.resolution, this.resolution, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
@@ -166,7 +150,9 @@ var Set_Note_Handler_Input = new function() {
                 }
                 this.selected = [];
             }
-            // TODO: maybe add functionality for space bar to play and pause
+            else if(e.detail.keyDown == 32){
+                this.midiEditor.spaceKey();
+            }
             else if(e.detail.ctrlKey){
                 // c, copy
                 if(e.detail.keyDown == 67){
@@ -188,7 +174,7 @@ var Set_Note_Handler_Input = new function() {
                     // create copies of notes on clipboard shifted forward so that the first note on the clipboard
                     // starts where the scrubbing bar is at
                     for(var n in this.clipboard){
-                        var addNote = Note_Space.createNote(this.clipboard[n].note, startCopying+this.clipboard[n].beat-this.clipboardStart, this.clipboard[n].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y);
+                        var addNote = Note_Space.createNote(this.clipboard[n].note, startCopying+this.clipboard[n].beat-this.clipboardStart, this.clipboard[n].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y, this.maxKeys);
                         this.insertNote(addNote);
                         this.selected.push(addNote);
                         addNote.selected = true;
@@ -220,7 +206,7 @@ var Set_Note_Handler_Input = new function() {
                         this.notes.splice(this.findNote(this.notes, this.selected[note], false),1);
                     
                     for(var note in this.selected){
-                        this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat, this.maxKeys);
+                        this.selected[note].mouseUp(this.resolution, this.PixelsPerNote, this.PixelsPerSection, this.PixelsPerBeat, this.maxKeys, this.selected.length == 1);
                         // reinsert selected notes into notes array in their correct place
                         this.insertNote(this.selected[note]);
                     }

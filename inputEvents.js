@@ -41,20 +41,20 @@ var Input_Events = new function() {
         $(this.editor).dblclick(function(e){e.preventDefault(); thisObj.mouseInputDoubleClick(e); return false;});
         $(document).keydown(function(e){
             // important keycodes for ctrl get passed down
-            if(!e.ctrlKey || importantKeys.indexOf(e.keyCode) != -1){
+            if(!(e.ctrlKey || e.metaKey) || importantKeys.indexOf(e.keyCode) != -1){
                 thisObj.keyInputDown(e); 
                 return false;
             }
         });
         $(document).keyup(function(e){
             // important keycodes for ctrl get passed down
-            if(!e.ctrlKey || importantKeys.indexOf(e.keyCode) != -1){
+            if(!(e.ctrlKey || e.metaKey) || importantKeys.indexOf(e.keyCode) != -1){
                 thisObj.keyInputUp(e); 
                 return false;
             }
         });
         
-        this.editor.addEventListener('mousewheel',function(e){e.preventDefault(); thisObj.mouseInputWheel(e); return false;});
+        this.editor.addEventListener('wheel',function(e){e.preventDefault(); thisObj.mouseInputWheel(e); return false;});
         
         console.log("New Input Events");
     }
@@ -62,7 +62,7 @@ var Input_Events = new function() {
     // keydown
     InputEvents.prototype.keyInputDown = function(event){
         this.detail.keyDown = event.keyCode;
-        this.detail.ctrlKey = event.ctrlKey;
+        this.detail.ctrlKey = event.ctrlKey || event.metaKey;
         this.editor.dispatchEvent(this.inputEvent);
     }
     
