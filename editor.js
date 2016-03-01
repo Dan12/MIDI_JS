@@ -95,7 +95,7 @@ var MIDI_Editor = new function() {
         if(this.midiWorkspace)
             this.midiWorkspace.draw(this.context);
         var t1 = performance.now();
-        console.log("Call took " + (t1 - t0) + " milliseconds.")
+        //console.log("Call took " + (t1 - t0) + " milliseconds.")
     }
     
     // is the editor ready (right now ask have all images loaded)
