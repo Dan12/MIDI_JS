@@ -13,5 +13,4 @@
 -  this.editor.recordKeyUp(keyCode)
 
 ### Performance Test
-- About 2000 notes, playback was fine, usually ~ 8 milliseconds of delay
-- scrolling while playing went up to ~ 35 milliseconds of delay and there was a clear delay in the sound
+- nearly constant time to play back no matter the amount of notes

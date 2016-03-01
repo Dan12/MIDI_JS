@@ -6,8 +6,6 @@ var Note_Handler = new function() {
         return new NoteHandler(editor, x, y, w, h, p, mk, m);
     }
     
-    // TODO: when recording or playing, check if beatAt is off the screen and scroll to bring it onto the screen 
-    
     /**
      * NoteHandler-creates and handles all of the notes as well 
      *      as being the parent object for all note activities
@@ -100,7 +98,7 @@ var Note_Handler = new function() {
         // interval for playing update
         this.playInterval = null;
         // number of milliseconds between play interval update
-        this.playResolution = 5;
+        this.playResolution = 4;
         // current notes playing but not finished
         this.notesPlaying = [];
         
@@ -280,6 +278,12 @@ var Note_Handler = new function() {
         var thisObj = this;
         this.recordInterval = setInterval(function(){
             thisObj.beatAt = thisObj.recordBeatStart+thisObj.MSToBeats*(new Date().getTime()-thisObj.recordStartTime);
+            
+            // auto scroll screen
+            var pixelsAt = thisObj.beatAt*thisObj.PixelsPerBeat;
+            if(pixelsAt+thisObj.horizontalOffset >= thisObj.width/2 || pixelsAt+thisObj.horizontalOffset < 0)
+                thisObj.midiEditor.canvasScroll(-1,-1,pixelsAt+thisObj.horizontalOffset-thisObj.width/2,0);
+            
             thisObj.midiEditor.redrawAll();
         },100);
     }
@@ -355,6 +359,11 @@ var Note_Handler = new function() {
             // set beatAt based on difference between start and end time
             thisObj.beatAt = startBeat+thisObj.MSToBeats*(new Date().getTime()-startTime);
             
+            // auto scroll screen
+            var pixelsAt = thisObj.beatAt*thisObj.PixelsPerBeat;
+            if(pixelsAt+thisObj.horizontalOffset >= thisObj.width/2 || pixelsAt+thisObj.horizontalOffset < 0)
+                thisObj.midiEditor.canvasScroll(-1,-1,pixelsAt+thisObj.horizontalOffset-thisObj.width/2,0);
+            
             // go through all of the notes that have started to play and check if any of them 
             // have stopped playing (their beat+length is behind or at the player bar)
             // do this first in case of back to back notes, the key is released before it is pressed again
@@ -388,8 +397,8 @@ var Note_Handler = new function() {
             // use this to redraw about every 100ms
             redrawCounter+=curTime-prevTime;
             prevTime = curTime;
-            if(redrawCounter > 100){
-                redrawCounter-=100;
+            if(redrawCounter > 20){
+                redrawCounter-=20;
                 thisObj.midiEditor.redrawAll();
             }
         },this.playResolution);
