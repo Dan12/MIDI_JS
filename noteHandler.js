@@ -437,6 +437,7 @@ var Note_Handler = new function() {
         this.selected = [];
         this.visibleNotes = [];
         this.scroll(0,0,this.horizontalOffset,this.verticalOffset);
+        this.midiEditor.redrawAll();
     }
     
     // create a new note and add it to visibleNotes and notes array
