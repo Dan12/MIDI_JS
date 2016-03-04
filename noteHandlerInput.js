@@ -155,7 +155,7 @@ var Set_Note_Handler_Input = new function() {
             }
             else if(e.detail.ctrlKey){
                 // c, copy
-                if(e.detail.keyDown == 67){
+                if(e.detail.keyDown == 67 && this.selected.length > 0){
                     // last note
                     this.clipboardStart = this.notes[this.notes.length-1].beat;
                     this.clipboard = [];
@@ -165,7 +165,7 @@ var Set_Note_Handler_Input = new function() {
                     }
                 }
                 // v, paste
-                else if(e.detail.keyDown == 86){
+                else if(e.detail.keyDown == 86 && this.clipboard.length > 0){
                     var startCopying = this.midiEditor.getScrubBarAt();
                     var endBeat = 0;
                     for(var note in this.selected)

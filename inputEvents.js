@@ -40,18 +40,16 @@ var Input_Events = new function() {
         $(this.editor).mouseleave(function(e){thisObj.mouseInputLeave(e); return false;});
         $(this.editor).dblclick(function(e){e.preventDefault(); thisObj.mouseInputDoubleClick(e); return false;});
         $(document).keydown(function(e){
-            // important keycodes for ctrl get passed down
-            if(!(e.ctrlKey || e.metaKey) || importantKeys.indexOf(e.keyCode) != -1){
-                thisObj.keyInputDown(e); 
+            // important keycodes for ctrl return false to prevent default behavior
+            thisObj.keyInputDown(e);
+            if((e.ctrlKey || e.metaKey) && importantKeys.indexOf(e.keyCode) != -1)
                 return false;
-            }
         });
         $(document).keyup(function(e){
-            // important keycodes for ctrl get passed down
-            if(!(e.ctrlKey || e.metaKey) || importantKeys.indexOf(e.keyCode) != -1){
-                thisObj.keyInputUp(e); 
+            // important keycodes for ctrl return false to prevent default behavior
+            thisObj.keyInputUp(e); 
+            if((e.ctrlKey || e.metaKey) && importantKeys.indexOf(e.keyCode) != -1)
                 return false;
-            }
         });
         
         this.editor.addEventListener('wheel',function(e){e.preventDefault(); thisObj.mouseInputWheel(e); return false;});
