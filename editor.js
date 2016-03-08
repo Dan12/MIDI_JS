@@ -150,4 +150,9 @@ var MIDI_Editor = new function() {
     Editor.prototype.newProject = function(){
         this.projectId = -1;
     }
+    
+    // Set BPM from keyboard
+    Editor.prototype.setBPM = function(bpm){
+        this.midiWorkspace.setBPM(bpm);
+    }
 }

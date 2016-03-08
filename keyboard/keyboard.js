@@ -98,6 +98,7 @@ var Keyboard_Space = new function(){
     Keyboard.prototype.keyPressSetup = function(){
         var thisObj = this;
         $(document).keydown(function(e){
+            thisObj.editor.setBPM(130);
             //console.log(e.keyCode);
             if(thisObj.switchSoundPackCheck(e.keyCode)){
                 // do nothing

@@ -194,6 +194,12 @@ var Editor_Header = new function() {
         this.midiWorkspace.sliderChange(this.text,this.value);
     }
     
+    Header.prototype.setBPM = function(b){
+        for(var item in this.items)
+            if(this.items[item].text == "BPM")
+                this.items[item].setValue(b);
+    }
+    
     /**
      * button with an icon
      * x-x position of top left corner

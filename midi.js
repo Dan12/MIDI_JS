@@ -388,6 +388,11 @@ var MIDI = new function() {
             this.BPM = v;
     }
     
+    // called from editory
+    MIDI_Workspace.prototype.setBPM = function(b){
+        this.header.setBPM(b);
+    }
+    
     // redraw call, usually from note handler when playing or recording
     MIDI_Workspace.prototype.redrawAll = function(){
         if(this.isPlaying || this.isRecording)
