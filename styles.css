@@ -45,7 +45,7 @@ h1{
     background-color: white;
 }
 .press{
-    background-color: yellow;
+    background-color: rgb(255,160,0);
 }
 .buttons{
     display:inline-block;
