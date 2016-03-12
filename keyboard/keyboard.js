@@ -210,7 +210,10 @@ var Keyboard_Space = new function(){
                     currentSounds[currentSoundPack][kcInd].stop();
                 $(".button-"+(kcInd)+"").attr("released","true");
                 // holdToPlay coloring, turned off for now
-                $(".button-"+(kcInd)+"").css("background-color", "white");
+
+                // Removes Style Attribute to clean up HTML
+                $(".button-"+(kcInd)+"").removeAttr("style");
+                
                 //$(".button-"+(kcInd)+"").css("background-color", $(".button-"+(kcInd)+"").attr("pressure") == "true" ? "lightgray" : "white");
             }
         }
