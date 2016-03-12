@@ -61,9 +61,12 @@ h1{
     cursor: pointer;
     background-color: white;
 }
+
 .pressed{
+	transition: background-color .2s ease-out;
     background-color: rgb(255,160,0);
 }
+
 .buttons{
     display:inline-block;
 }
