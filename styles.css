@@ -44,7 +44,7 @@ h1{
     cursor: pointer;
     background-color: white;
 }
-.press{
+.pressed{
     background-color: rgb(255,160,0);
 }
 .buttons{
