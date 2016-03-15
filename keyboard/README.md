@@ -12,5 +12,9 @@
 -  this.editor.recordKeyDown(keyCode)
 -  this.editor.recordKeyUp(keyCode)
 
+### Miscelaneous FUnctions
+-  this.editor.setBPM(BPM), maunally set the editor's bpm from the keyboard for the song
+
 ### Performance Test
 - nearly constant time to play back no matter the amount of notes
+- Slight stutteryness at some intervals, this can be improved

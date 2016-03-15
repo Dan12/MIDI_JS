@@ -13,26 +13,28 @@ var Keyboard_Space = new function(){
         this.loadSounds(currentSongData["mappings"]["chain3"], currentSounds[2], 3);
         this.loadSounds(currentSongData["mappings"]["chain4"], currentSounds[3], 4);
         
+        this.backend = BackendSpace.init();
+        
         console.log("New keyboard created");
     }
     
+    // link the keyboard and the editor
     Keyboard.prototype.linkEditor = function(editor){
         this.editor = editor;
+        var mainObj = this;
+        setTimeout(function(){mainObj.editor.setBPM(currentSongData.bpm)},500);
     }
     
     // loads sounds from srcArray for given chain into soundArr
     Keyboard.prototype.loadSounds = function(srcArr, soundArr, chain){
-        for(var i = 0; i < srcArr.length; i++){
+        for(var i = 0; i < srcArr.length; i++)
             soundArr.push(null);
-        }
     
         for(var i = 0; i < srcArr.length; i++){
-            if(srcArr[i] == ""){
+            if(srcArr[i] == "")
                 this.checkLoaded();
-            }
-            else{
+            else
                 this.requestSound(i, srcArr, soundArr, chain);
-            }
         }
     }
     
@@ -87,18 +89,29 @@ var Keyboard_Space = new function(){
             }
         }
         
-        this.touchScreenSetup();
+        $(".soundPack").html("Sound Pack: "+(currentSoundPack+1));
         
-        this.keyPressSetup();
-        
-        this.initUI();
+        if(!loaded){
+            $("#sound_pack_buttons").append('<div class="sound_pack_button sound_pack_button_2">^</div>');
+            $("#sound_pack_buttons").append('<div class="sound_pack_button sound_pack_button_1"><</div>');
+            $("#sound_pack_buttons").append('<div class="sound_pack_button sound_pack_button_3">v</div>');
+            $("#sound_pack_buttons").append('<div class="sound_pack_button sound_pack_button_4">></div>');
+            $(".sound_pack_button_"+(currentSoundPack+1)).css("background-color","rgb(255,160,0)");
+            
+            this.touchScreenSetup();
+            
+            this.keyPressSetup();
+            
+            this.initUI();
+            
+            loaded = true;
+        }
     }
     
     // setup keypress on document
     Keyboard.prototype.keyPressSetup = function(){
         var thisObj = this;
         $(document).keydown(function(e){
-            thisObj.editor.setBPM(130);
             //console.log(e.keyCode);
             if(thisObj.switchSoundPackCheck(e.keyCode)){
                 // do nothing
@@ -281,6 +294,8 @@ var Keyboard_Space = new function(){
         // set the new soundpack
         currentSoundPack = sp;
         
+        $(".sound_pack_button").css("background-color","white");
+        $(".sound_pack_button_"+(currentSoundPack+1)).css("background-color","rgb(255,160,0)");
         $(".soundPack").html("Sound Pack: "+(currentSoundPack+1));
         for(var i = 0; i < 4; i++){
             for(var j = 0; j < 12; j++){
@@ -297,26 +312,64 @@ var Keyboard_Space = new function(){
     // shows and formats all of the UI elements
     Keyboard.prototype.initUI = function(){
         // create new editor and append it to the body element
-        MIDI_Editor.init("body", this);
-        
-        $(".soundPack").html("Sound Pack: "+(currentSoundPack+1));
+        MIDI_Editor.init("#editor_container_div", this);
         
         // info and links buttons
-        $("#info_button").css("display", "inline-block");
-        $("#info_button").click(function(){
-            $("#info").toggle("display");
-            $("#links").css("display","none");
-            $("#editor_container").css("display", "none");
-            $(".click_button").css("background-color","white");
-            $(this).css("background-color","lightgray");
+        $(".click_button").css("display", "inline-block");
+        
+        for(var s in songDatas)
+            $("#songs_container").append("<div class='song_selection' songInd='"+s+"'>"+songDatas[s].song_name+"</div>");
+        $("[songInd='"+currentSongInd+"']").css("background-color","rgb(220,220,220)");
+        
+        var mainObj = this; 
+        
+        $(".song_selection").click(function() {
+            var tempS = parseInt($(this).attr("songInd"));
+            if(tempS != currentSongInd){
+                currentSongInd = tempS
+                currentSongData = songDatas[currentSongInd];
+                $(".song_selection").css("background-color","white");
+                $("[songInd='"+currentSongInd+"']").css("background-color","rgb(220,220,220)");
+                
+                $(".button-row").remove();
+                
+                currentSounds = [];
+                for(var i = 0; i < numChains; i++)
+                    currentSounds.push([]);
+                    
+                mainObj.editor.notesLoaded([],-1);
+                
+                mainObj.editor.setBPM(currentSongData.bpm)
+                
+                numSoundsLoaded = 0;
+                mainObj.loadSounds(currentSongData["mappings"]["chain1"], currentSounds[0], 1);
+                mainObj.loadSounds(currentSongData["mappings"]["chain2"], currentSounds[1], 2);
+                mainObj.loadSounds(currentSongData["mappings"]["chain3"], currentSounds[2], 3);
+                mainObj.loadSounds(currentSongData["mappings"]["chain4"], currentSounds[3], 4);
+            }
         });
-        $("#links_button").css("display", "inline-block");
-        $("#links_button").click(function(){
-            $("#links").toggle("display");
-            $("#editor_container").css("display","none");
-            $("#info").css("display", "none");
+        
+        $(".click_button").click(function(){
+            var thisObj = this;
+            if($("#"+$(thisObj).attr("toggle_id")).css("display") == "none"){
+                $(".toggle_container").css("display", "none");
+                
+                $("#"+$(thisObj).attr("toggle_id")).toggle(300, function(){
+                    if($("#"+$(thisObj).attr("toggle_id")).css("display") == "block"){
+                        $(thisObj).css("background-color","lightgray");
+                        $("html, body").animate({ scrollTop: $(document).height()-$(window).height() }, 300);
+                    }
+                });
+            }
+            else{
+                $("#"+$(thisObj).attr("toggle_id")).toggle(300, function(){
+                    if($("#"+$(thisObj).attr("toggle_id")).css("display") == "block"){
+                        $(thisObj).css("background-color","lightgray");
+                        $("html, body").animate({ scrollTop: $(document).height()-$(window).height() }, 300);
+                    }
+                });
+            }
             $(".click_button").css("background-color","white");
-            $(this).css("background-color","lightgray");
         });
     }
     
@@ -325,15 +378,14 @@ var Keyboard_Space = new function(){
         var saveNote = [];
         for(var n in notes)
             saveNote.push({"note":notes[n].note, "beat":notes[n].beat, "length":notes[n].length});
-        console.log(JSON.stringify(saveNote));
-        // send project id back to editor (if new project, will be new pid)
-        this.editor.notesSaved(pid);
+        //console.log(saveNote);
+        this.backend.saveSong(JSON.stringify(saveNote), pid, this.editor, currentSongData.song_number);
     }
     
     // ask the user for the project they would like to load and then load that project from the server
     // send back a notes array of the loaded project with note,beat,and length and the project id
     Keyboard.prototype.loadNotes = function(){
-        this.editor.notesLoaded([{"note":2,"beat":3,"length":1},{"note":3,"beat":6,"length":1}],1);
+        this.backend.loadSongs(this.editor, currentSongData.song_number);
     }
     
     // TODO: convert keypairs to dictionarys/objects
@@ -364,8 +416,11 @@ var Keyboard_Space = new function(){
     // howl objects for current song
     var currentSounds = [];
     // reference to current song data
+    var songDatas = [equinoxData];
+    var currentSongInd = 0;
     var currentSongData = equinoxData;
     // number of chains
     var numChains = 4;
+    var loaded = false;
 
 }

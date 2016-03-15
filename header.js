@@ -184,7 +184,7 @@ var Editor_Header = new function() {
     // used to increment the slider by the horizontal scroll velocity
     Slider.prototype.smallInc = function(dx){
         if(this.mouseOver)
-            this.setValue(Math.max(Math.min(this.value+dx,this.max),this.min));
+            this.setValue(Math.max(Math.min(this.value+(dx > 0 ? 1 : 0),this.max),this.min));
     }
     
     // set the value and call midi editor function to 
