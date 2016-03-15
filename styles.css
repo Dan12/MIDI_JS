@@ -1,3 +1,4 @@
+/* General */
 body{
     font-family: Arial;
     text-align: center;
@@ -10,23 +11,8 @@ h1{
     color: rgb(99,101,109);
 }
 
-.credits{
-	width: 100%;
-	margin: 0px;
-}
 
-.author {
-    display: inline-block;
-    margin: 0px 20px 20px;
-}
-
-.author a{
-	color: #2098d1;
-	text-decoration: none;
-}
-
-.author a:hover{text-decoration: underline;}
-
+/* Expandable Elements */
 .editor_canvas{
     border: 4px solid rgb(140,204,188);
     border-radius: 10px;
@@ -93,4 +79,24 @@ h1{
     font-size: 30px;
     margin: 8px 0;
     cursor: pointer;
+}
+
+/* Footer */
+.credits{
+	width: 100%;
+	margin: 0px;
+}
+
+.author {
+    display: inline-block;
+    margin: 0px 20px 20px;
+}
+
+.author a{
+	color: #2098d1;
+	text-decoration: none;
+}
+
+.author a:hover{
+    text-decoration: underline;
 }
