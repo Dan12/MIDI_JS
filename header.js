@@ -11,6 +11,9 @@ var Editor_Header = new function() {
     // height and width of slider
     var sliderSize = 30;
     
+    // timeout flag for small inc
+    var smallIncAvailable = true;
+    
     //0-pause,1-play,2-record,3-stop,4-new,5-load,6-save
     var images = [
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHEAAABxCAYAAADifkzQAAADrklEQVR42u3czUsVURjH8UubaH25oI1nZm71DwRRWUK08aatinYFvWjtyqRN0UKLwghfaF8tTOtf0BaK7sogCInWwl3XNsQmLRJf7s07r+c853wfGBBBzu+cz5yZM85LqWRBHfKDKMlWVf6vElVsHVb+alKwOBsjbcgsu3ThYnTzRt/mBqqBcFm3+X52FtC84UzLhFgLA9XTXYsk5Ax9/zt4AvfwhpgdwTx4lvRl/df7rcVTStVsPbc4cc50ZWHQoJ8/bejXAddWdROjY/bssK4vy8X3nWuqv3X18pUdK1i1BiCzstiwr1++AlASpGpvP8bsEwxZqVSOANh6nTp+wixIz/M6AYxfI0+emgMJYPLaWDNoHz8A09fgwIA+SACFL3YAzHdMww71obDGbvX1gyhxcjALhUMCKBwSQBAp3eMNoHBIAEFsqT4tLaV6xP7x8HCUVR9Ne8Q/dTtFBQWxefV210CUjpjKociQWxGTZMwSMcnf5T0+byYnQZSOmChj0StSEPeurpOdIEpHjJ2z6HAgZpxTx8U9iBm3CaIMxP+2qyMYiBlm1fV/UhAzPKSCKAuxYdu6QoGYUd7QDz6DKAOxads67xuCCKLTiKHvfzUiEIgZZQYRRBALrtmZme2ZNz7cCqIsxF3t636iDUQQQQRRPmK5XPZAFI4YesEYiMIR/2T498OjoSEQQQQRRBDTI3JOBBFEVqcgcp3If2xAFI/IXQwLEHUHAjF+7bqfCCJ39kE0DZGn3WQhhir4BmLJpudOlb8MonBEnaFAzDAvb0WBCKLuQ6nOYCBmnJV39kEEUfehVFc4EHPIyRelLEAs+tYUiHvXmdNd8TPylUWzEBNlBNEcxLdTU8kt+PKw8C8Pg2gG4vlzPenbKSJsvV5/MT46GiXd5ufmUmVL0/bGZuws1HnxT+Uw9kBagAikBYAgWgAIpEWIQFoAuLORu7fvACl1gjAb8x3Tqgq+2LfXOARY+HgCmb4e3n8QaR9HIJPX85FnkRHj57W1nQUyfk2MjUdGjdvBSuUokK3X1rv0Ro2X53mdQBq+iEkS8t30NJjSAEWGZUyA3Kv6r13fNg5hh1oTvfe5hmlN39cXPGXXIHu7a3buvK7Myl39VGrZ/k5aguncqUPX85sF4u1z9sQvBXNlZWWxUe6qUh+5hjIctFnG0A9+cCXcAqYJX25y+rCZB2geqIsLC0a8e+EsaLPt3uDg5mbySzNugSp/Ne0LMKAZWlvfbo6zhUrVbej/b3tawRq7/DAmAAAAAElFTkSuQmCC"
@@ -184,8 +187,13 @@ var Editor_Header = new function() {
     // used to increment the slider by the horizontal scroll velocity
     Slider.prototype.smallInc = function(dx){
         if(this.mouseOver)
-            this.setValue(Math.max(Math.min(this.value+(dx > 0 ? 1 : 0),this.max),this.min));
-    }
+            if(smallIncAvailable){
+                this.setValue(Math.max(Math.min(this.value+Math.sign(dx)*Math.min(Math.abs(dx),1),this.max),this.min));
+                smallIncAvailable = false;
+                console.log(smallIncAvailable);
+                setTimeout(function(){smallIncAvailable = true;},250);
+            }
+        }
     
     // set the value and call midi editor function to 
     // set the corrensponding value in midi editor
