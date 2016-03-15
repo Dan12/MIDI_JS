@@ -1,6 +1,9 @@
 $(document).ready(function(){
    // create a new player
    Keyboard_Space.initKeyboard();
+   
+   // a simple test player
+   //Test_Player.init();
     
    $(window).resize(function(){
      $(".buttons").css("margin", "0");

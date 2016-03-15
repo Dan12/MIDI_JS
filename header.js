@@ -190,10 +190,9 @@ var Editor_Header = new function() {
             if(smallIncAvailable){
                 this.setValue(Math.max(Math.min(this.value+Math.sign(dx)*Math.min(Math.abs(dx),1),this.max),this.min));
                 smallIncAvailable = false;
-                console.log(smallIncAvailable);
                 setTimeout(function(){smallIncAvailable = true;},250);
             }
-        }
+    }
     
     // set the value and call midi editor function to 
     // set the corrensponding value in midi editor
