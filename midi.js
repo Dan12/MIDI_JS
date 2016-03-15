@@ -378,10 +378,17 @@ var MIDI = new function() {
     // update slider value in midi workspace
     MIDI_Workspace.prototype.sliderChange = function(t,v){
         if(t == "Zoom"){
+            var prevZoom = this.ZoomLevel;
             this.ZoomLevel = v-6;
             this.BeatsPerSection = resolutions[this.ZoomLevel+5];
             this.BeatsToPixels = PixelsPerSection/this.BeatsPerSection;
             this.noteHandler.changeResolution(this.BeatsPerSection);
+            
+            // set the new horizontal offset so that whatever was in the center
+            // of the screen before zooming will be the new zoomed in/out center of the screen
+            var centerScreen = this.horizontalOffset-this.width/2;
+            this.horizontalOffset = Math.min(centerScreen*Math.pow(2,prevZoom-this.ZoomLevel)+this.width/2,0);
+            
             this.canvasScroll(-1,-1,0,0);
         }
         else if(t == "BPM")
