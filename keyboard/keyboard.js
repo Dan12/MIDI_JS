@@ -106,9 +106,10 @@ var Keyboard_Space = new function(){
             }
             else{
                 if(!(e.ctrlKey || e.metaKey)){
-                    var keyInd = keyPairs.indexOf(e.keyCode);
-                    if(keyInd == -1)
-                        keyInd = backupPairs.indexOf(e.keyCode);
+                    // var keyInd = keyPairs.indexOf(e.keyCode);
+                    // if(keyInd == -1)
+                    //     keyInd = backupPairs.indexOf(e.keyCode);
+                    var keyInd = thisObj.getKeyInd(e.keyCode);
                     //console.log(keyInd);
                     //console.log(e.keyCode);
                     if($(".button-"+(keyInd)+"").attr("released") == "true" && currentSounds[currentSoundPack][keyInd] != null){
@@ -126,9 +127,10 @@ var Keyboard_Space = new function(){
             }
             else{
                 if(!(e.ctrlKey || e.metaKey)){
-                    var keyInd = keyPairs.indexOf(e.keyCode);
-                    if(keyInd == -1)
-                        keyInd = backupPairs.indexOf(e.keyCode);
+                    // var keyInd = keyPairs.indexOf(e.keyCode);
+                    // if(keyInd == -1)
+                    //     keyInd = backupPairs.indexOf(e.keyCode);
+                    var keyInd = thisObj.getKeyInd(e.keyCode);
                     if(currentSounds[currentSoundPack][keyInd] != null)
                         thisObj.releaseKey(e.keyCode);
                 }
@@ -136,29 +138,33 @@ var Keyboard_Space = new function(){
         });
     }
     
+    Keyboard.prototype.getKeyInd = function(kc){
+        var keyInd = keyPairs.indexOf(kc);
+        if(keyInd == -1)
+            keyInd = backupPairs.indexOf(kc);
+            
+        return keyInd;
+    }
+    
     Keyboard.prototype.switchSoundPackCheck = function(kc){
         // up
         if(kc == 39){
-            currentSoundPack = 3;
-            this.switchSoundPack();
+            this.switchSoundPack(3);
             return true;
         }
         // left
         else if(kc == 37){
-            currentSoundPack = 0;
-            this.switchSoundPack();
+            this.switchSoundPack(0);
             return true;
         }
         // down
         else if(kc == 38){
-            currentSoundPack = 1;
-            this.switchSoundPack();
+            this.switchSoundPack(1);
             return true;
         }
         // right
         else if(kc == 40){
-            currentSoundPack = 2;
-            this.switchSoundPack();
+            this.switchSoundPack(2);
             return true;
         }
     }
@@ -202,9 +208,7 @@ var Keyboard_Space = new function(){
             // do nothing
         }
         else{
-            var kcInd = keyPairs.indexOf(kc);
-            if(kcInd == -1)
-                kcInd = backupPairs.indexOf(kc);
+            var kcInd = this.getKeyInd(kc);
             if(currentSounds[currentSoundPack][kcInd] != null){
                 if($(".button-"+(kcInd)+"").attr("pressure") == "true")
                     currentSounds[currentSoundPack][kcInd].stop();
@@ -214,9 +218,8 @@ var Keyboard_Space = new function(){
                 // Removes Style Attribute to clean up HTML
                 $(".button-"+(kcInd)+"").removeAttr("style");
 
-                if($(".button-"+(kcInd)+"").hasClass("pressed") == true){
+                if($(".button-"+(kcInd)+"").hasClass("pressed") == true)
                 	$(".button-"+(kcInd)+"").removeClass("pressed");
-                }
 
                 //$(".button-"+(kcInd)+"").css("background-color", $(".button-"+(kcInd)+"").attr("pressure") == "true" ? "lightgray" : "white");
             }
@@ -238,9 +241,7 @@ var Keyboard_Space = new function(){
             // do nothing
         }
         else{
-            var kcInd = keyPairs.indexOf(kc);
-            if(kcInd == -1)
-                kcInd = backupPairs.indexOf(kc);
+            var kcInd = this.getKeyInd(kc);
             if(currentSounds[currentSoundPack][kcInd] != null){
                 currentSounds[currentSoundPack][kcInd].stop();
                 currentSounds[currentSoundPack][kcInd].play();
@@ -270,7 +271,16 @@ var Keyboard_Space = new function(){
     }
     
     // switch sound pack and update pressures
-    Keyboard.prototype.switchSoundPack = function(){
+    Keyboard.prototype.switchSoundPack = function(sp){
+        // release all keys
+        for(var i = 0; i < 4; i++)
+            for(var j = 0; j < 12; j++)
+                if($(".button-"+(i*12+j)+"").attr("released") == "false")
+                    this.releaseKey(keyPairs[i*12+j]);
+        
+        // set the new soundpack
+        currentSoundPack = sp;
+        
         $(".soundPack").html("Sound Pack: "+(currentSoundPack+1));
         for(var i = 0; i < 4; i++){
             for(var j = 0; j < 12; j++){
