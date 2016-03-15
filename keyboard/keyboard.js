@@ -210,7 +210,14 @@ var Keyboard_Space = new function(){
                     currentSounds[currentSoundPack][kcInd].stop();
                 $(".button-"+(kcInd)+"").attr("released","true");
                 // holdToPlay coloring, turned off for now
-                $(".button-"+(kcInd)+"").css("background-color", "white");
+
+                // Removes Style Attribute to clean up HTML
+                $(".button-"+(kcInd)+"").removeAttr("style");
+
+                if($(".button-"+(kcInd)+"").hasClass("pressed") == true){
+                	$(".button-"+(kcInd)+"").removeClass("pressed");
+                }
+
                 //$(".button-"+(kcInd)+"").css("background-color", $(".button-"+(kcInd)+"").attr("pressure") == "true" ? "lightgray" : "white");
             }
         }
@@ -255,8 +262,9 @@ var Keyboard_Space = new function(){
                 });
                 
                 // set button color and attribute
+                $(".button-"+(kcInd)+"").addClass("pressed");
                 $(".button-"+(kcInd)+"").attr("released","false");
-                $(".button-"+(kcInd)+"").css("background-color","rgb(255,160,0)");
+                //$(".button-"+(kcInd)+"").css("background-color","rgb(255,160,0)");
             }
         }
     }
