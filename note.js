@@ -50,6 +50,9 @@ var Note_Space = new function() {
         
         // radius of corner of the note
         this.radius = 6;
+        
+        // the ratio of resizable hover area
+        this.resizeRatio = 5;
     }
     
     // draw note
@@ -123,14 +126,14 @@ var Note_Space = new function() {
     
     // check if the mouse if over the left 3rd of the note
     Note.prototype.overLeftEdge = function(mx, my){
-        if(this.pw > this.minResizePadding && mx > this.px && mx < this.px+this.pw/3 && my > this.py && my < this.py+this.height)
+        if(this.pw > this.minResizePadding && mx > this.px && mx < this.px+this.pw/this.resizeRatio && my > this.py && my < this.py+this.height)
             return true;
         return false;
     }
     
     // check if th mouse if over the right 3rd of the note
     Note.prototype.overRightEdge = function(mx, my){
-        if(this.pw > this.minResizePadding && mx > this.px+this.pw-this.pw/3 && mx < this.px+this.pw && my > this.py && my < this.py+this.height)
+        if(this.pw > this.minResizePadding && mx > this.px+this.pw-this.pw/this.resizeRatio && mx < this.px+this.pw && my > this.py && my < this.py+this.height)
             return true;
         return false;
     }

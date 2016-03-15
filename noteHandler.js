@@ -62,6 +62,9 @@ var Note_Handler = new function() {
         // as that would indicate a drag window selctor
         this.possibleNewNote = null;
         
+        // set to true when mouse down, set to false if mouse drag
+        this.possibleDoubleClick = false;
+        
         // -1-no resizing initialized, 0-no resizing, just draggin, 1-left edge resizing, 2-right edge resizing
         this.resizing = -1;
         // farthest note, used to set midi maximum width
@@ -430,7 +433,7 @@ var Note_Handler = new function() {
     }
     
     NoteHandler.prototype.setNotes = function(n){
-        console.log(n);
+        //console.log(n);
         this.notes = []
         for(var i in n)
             this.addNewNote(Note_Space.createNote(n[i].note, n[i].beat, n[i].length, this.PixelsPerNote, this.PixelsPerBeat, this.x, this.y, this.maxKeys));

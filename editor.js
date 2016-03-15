@@ -143,7 +143,7 @@ var MIDI_Editor = new function() {
     Editor.prototype.notesLoaded = function(notes, pid){
         this.midiWorkspace.notesLoaded(notes);
         this.projectId = pid;
-        console.log(this.projectId);
+        //console.log(this.projectId);
     }
     
     // new project was created so reset the project id

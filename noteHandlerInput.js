@@ -6,6 +6,9 @@ var Set_Note_Handler_Input = new function() {
         nh.prototype.generalInput = function(e){
             // if the mouse is down
             if(e.detail.mouseDown){
+                // possible new double click
+                this.possibleDoubleClick = true;
+                
                 // this variable tells later if statments if they should execute
                 var exit = false;
                 // if not doing drag select
@@ -194,6 +197,9 @@ var Set_Note_Handler_Input = new function() {
                 if(this.selected.length == 0 && !this.multiSelect.isActive && e.detail.mouseY > this.y){
                     this.multiSelect.startNew(e.detail.mouseX, e.detail.mouseY, this.horizontalOffset, this.verticalOffset);
                 }
+                // no longer a double click possibility, prevents double click deleting on drag
+                else if(this.selected.length > 0)
+                    this.possibleDoubleClick = false;
             }
             
             // if the mouse is up or the mouse goes out of bounds of the note handler window, place all currently selected notes
@@ -217,13 +223,18 @@ var Set_Note_Handler_Input = new function() {
             // if there was a double click, go through notes 
             // if the double click was on that note, delete it 
             if(e.detail.doubleClickConsumes > 0){
-                for(var note = this.visibleNotes.length-1; note >= 0; note--)
-                    if(this.visibleNotes[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
-                        this.notes.splice(this.notes.indexOf(this.visibleNotes[note]),1);
-                        this.visibleNotes.splice(note,1);
-                        this.selected.splice(this.selected.indexOf(this.visibleNotes[note]),1);
-                        break;
-                    }
+                if(this.possibleDoubleClick){
+                    for(var note = this.visibleNotes.length-1; note >= 0; note--)
+                        if(this.visibleNotes[note].mouseOver(e.detail.mouseX-this.horizontalOffset, e.detail.mouseY-this.verticalOffset)){
+                            this.notes.splice(this.notes.indexOf(this.visibleNotes[note]),1);
+                            this.visibleNotes.splice(note,1);
+                            this.selected.splice(this.selected.indexOf(this.visibleNotes[note]),1);
+                            break;
+                        }
+                        
+                    //console.log(e.detail.doubleClickConsumes);
+                }
+                this.possibleDoubleClick = false;
                 e.detail.doubleClickConsumes--;
             }
             
