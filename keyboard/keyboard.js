@@ -1,6 +1,7 @@
 var Keyboard_Space = new function(){
 
-    this.initKeyboard = function(){
+    this.initKeyboard = function(testing){
+        testmode = testing;
         return new Keyboard();
     }
     
@@ -211,7 +212,10 @@ var Keyboard_Space = new function(){
     // shows and formats all of the UI elements
     Keyboard.prototype.initUI = function(){
         // create new editor and append it to the body element
-        MIDI_Editor.init("#editor_container_div", this);
+        if(testmode)
+            BasicMIDI.init("#editor_container_div", this);
+        else
+            MIDI_Editor.init("#editor_container_div", this);
         
         // info and links buttons
         // $(".click_button").css("display", "inline-block");
@@ -277,5 +281,7 @@ var Keyboard_Space = new function(){
     // number of chains
     var numChains = 4;
     var loaded = false;
+    
+    var testmode = false;
 
 }

@@ -55,6 +55,7 @@ h1{
 
 .buttons{
     display:inline-block;
+    min-width: 840px;
 }
 
 .link{

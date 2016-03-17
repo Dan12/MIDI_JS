@@ -106,8 +106,9 @@ var MIDI = new function() {
     MIDI_Workspace.prototype.generalInput = function(e){
         
         // if scrolling and mouse in MIDI workspace, scroll canvas and consume the scroll
-        if(e.detail.scrollConsumes > 0 && e.detail.mouseY > this.heightOffset){
-            this.canvasScroll(e.detail.mouseX,e.detail.mouseY,e.detail.deltaX, e.detail.deltaY);
+        if(e.detail.scrollConsumes > 0){
+            if(e.detail.mouseY > this.heightOffset)
+                this.canvasScroll(e.detail.mouseX,e.detail.mouseY,e.detail.deltaX, e.detail.deltaY);
             e.detail.scrollConsumes--;
         }
         

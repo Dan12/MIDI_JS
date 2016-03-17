@@ -4,7 +4,7 @@ printf "return MIDI_Editor.init(append_to, player);\n" >> Compiled.js
 printf "}\n\n" >> Compiled.js
 
 for f in *.js; do
-    if ( [ $f != 'Compiled.js' ] && [ $f != 'testPlayer.js' ] && [ $f != 'main.js' ] ); then
+    if ( [ $f != 'Compiled.js' ] && [ $f != 'main.js' ] ); then
         cat "${f}" >> Compiled.js; 
         printf "\n\n" >> Compiled.js;
         echo "Concatenated ${f}"
