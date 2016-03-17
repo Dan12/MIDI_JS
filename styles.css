@@ -81,6 +81,7 @@ h1{
     display: inline-block;
     padding: 4px 8px;
     margin: 0 10px;
+    background-color: white;
 }
 
 .loaded_song{
@@ -138,15 +139,10 @@ h1{
     display: none;
 }
 
-.click_button{
-    background-color: white;
-    margin-bottom: 20px;
-}
-
 /* Footer */
 .credits{
 	width: 100%;
-	margin: 0px;
+	margin: 20px 0;
 }
 
 .author {

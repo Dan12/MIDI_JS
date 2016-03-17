@@ -7,7 +7,7 @@ var Keyboard_UI_Space = new function(){
     var KeyboardUI = function(){}
     
     KeyboardUI.prototype.initUI = function(){
-        // info, links, and editor buttons
+        // info, links, songs, and editor buttons
         $(".click_button").css("display", "inline-block");
         
         $(".click_button").click(function(){
@@ -87,6 +87,8 @@ var Keyboard_UI_Space = new function(){
             this.touchScreenSetup(keyboard);
             
             this.keyPressSetup(keyboard, currentSounds, currentSoundPack);
+            
+            keyboard.initUI();
             
             this.initUI();
             
