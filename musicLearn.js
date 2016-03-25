@@ -1,6 +1,6 @@
 var MusicLearnSpace = new function(){
 
-    // sample backend for keyboard
+    // music learn space
     this.init = function(){
         return new MusicLearn();
     }
